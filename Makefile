@@ -35,7 +35,7 @@ ci: lint test ## Run all the tests and code checks
 
 .PHONY: clean
 clean: ## Clean
-	$(GOCLEAN)
+	$(GOCLEAN) -testcache
 
 
 .PHONY: help
