@@ -167,7 +167,7 @@ func NewTestbed(behavior Behavior, tester func(evt Event) bool) *Testbed {
 				return
 			case evt := <-tb.cell.outc:
 				if tester(evt) {
-					close(tb.donec)
+					tb.donec <- struct{}{}
 				}
 			}
 		}
