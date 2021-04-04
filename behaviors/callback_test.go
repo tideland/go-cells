@@ -39,25 +39,22 @@ func TestCallbackBehavior(t *testing.T) {
 		return out.Emit("b")
 	}
 	behavior := behaviors.NewCallbackBehavior(callbackA, callbackB)
-	tester := func(evt mesh.Event) bool {
+	eval := func(evt mesh.Event) (bool, error) {
 		switch evt.Topic() {
 		case "a":
 			countA++
 		case "b":
 			countB++
 		}
-		return countA == countB && countA == count
+		return countA == countB && countA == count, nil
 	}
-	tb := mesh.NewTestbed(behavior, tester)
-
-	// Run the tests and check if the number of calls
-	// of both callbacks.
-	for i := 0; i < count; i++ {
-		topic := strconv.Itoa(i)
-		tb.Emit(topic)
-	}
-
-	err := tb.Wait(time.Second)
+	tb := mesh.NewTestbed(behavior, eval)
+	err := tb.Go(func(out mesh.Emitter) {
+		for i := 0; i < count; i++ {
+			topic := strconv.Itoa(i)
+			out.Emit(topic)
+		}
+	}, time.Second)
 	assert.NoError(err)
 }
 

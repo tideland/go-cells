@@ -19,13 +19,27 @@ import (
 )
 
 //--------------------
+// TESTBED FUNCTIONS
+//--------------------
+
+// TestbedRunner contains the operations running in the background
+// and emitting all events used by the tested behaviors as input.
+type TestbedRunner func(out Emitter)
+
+// TestbedEvaluator allows to test the events emitted by the behaviors
+// in a Testbed. It has to return false as long as not all wanted events
+// have been returned and true once all expectations have been fullfilled.
+// Internal errors can be explicitely returned.
+type TestbedEvaluator func(evt Event) (bool, error)
+
+//--------------------
 // TESTBED HELPERS
 //--------------------
 
 // testbedMesh implements the Mesh interface.
 type testbedMesh struct{}
 
-// Go implements mesh.Mesh and always returns an error.
+// Go implements Mesh and always returns an error.
 func (tbm testbedMesh) Go(name string, b Behavior) error {
 	return fmt.Errorf("cell name '%s' already used", name)
 }
@@ -62,18 +76,18 @@ func (tbm testbedMesh) Emitter(name string) (Emitter, error) {
 // testbedCell runs the behavior and provides the needed interfaces.
 type testbedCell struct {
 	ctx      context.Context
+	testbed  *Testbed
 	behavior Behavior
 	inc      chan Event
-	outc     chan Event
 }
 
-// goTestbedCell initializes the testbed cell and spawns the goroutine.
-func goTestbedCell(ctx context.Context, behavior Behavior) *testbedCell {
+// newTestbedCell initializes the testbed cell and spawns the goroutine.
+func newTestbedCell(ctx context.Context, tb *Testbed, behavior Behavior) *testbedCell {
 	tbc := &testbedCell{
 		ctx:      ctx,
+		testbed:  tb,
 		behavior: behavior,
 		inc:      make(chan Event),
-		outc:     make(chan Event),
 	}
 	go tbc.backend()
 	return tbc
@@ -94,6 +108,16 @@ func (tbc *testbedCell) Mesh() Mesh {
 	return testbedMesh{}
 }
 
+// push witers an event into the input channel.
+func (tbc *testbedCell) push(evt Event) error {
+	select {
+	case <-tbc.ctx.Done():
+		return errors.New("cell already terminated")
+	case tbc.inc <- evt:
+		return nil
+	}
+}
+
 // Pull implements mesh.Receptor.
 func (tbc *testbedCell) Pull() <-chan Event {
 	return tbc.inc
@@ -110,7 +134,7 @@ func (tbc *testbedCell) Emit(topic string, payloads ...interface{}) error {
 
 // EmitEvent implements mesh.Emitter.
 func (tbc *testbedCell) EmitEvent(evt Event) error {
-	tbc.outc <- evt
+	tbc.testbed.testEmittedEvent(evt)
 	return nil
 }
 
@@ -118,16 +142,42 @@ func (tbc *testbedCell) EmitEvent(evt Event) error {
 func (tbc *testbedCell) backend() {
 	if err := tbc.behavior.Go(tbc, tbc, tbc); err != nil {
 		// Notify subscribers about error.
-		tbc.Emit(TopicError, PayloadCellError{
+		tbc.Emit(TopicTestbedError, PayloadCellError{
 			CellName: tbc.Name(),
 			Error:    err.Error(),
 		})
 	} else {
 		// Notify subscribers about termination.
-		tbc.Emit(TopicTerminated, PayloadTermination{
+		tbc.Emit(TopicTestbedTerminated, PayloadTermination{
 			CellName: tbc.Name(),
 		})
 	}
+}
+
+// testbedEmitter allows the testbed runner to emit events to the testbed.
+type testbedEmitter struct {
+	testbed *Testbed
+}
+
+// newTesbedEmitter initializes the testbed emitter.
+func newTestbedEmitter(tb *Testbed) *testbedEmitter {
+	return &testbedEmitter{
+		testbed: tb,
+	}
+}
+
+// Emit creates an event and sends it to the behavior.
+func (tbe *testbedEmitter) Emit(topic string, payloads ...interface{}) error {
+	evt, err := NewEvent(topic, payloads...)
+	if err != nil {
+		return err
+	}
+	return tbe.EmitEvent(evt)
+}
+
+// Emit sends an event to the behavior.
+func (tbe *testbedEmitter) EmitEvent(evt Event) error {
+	return tbe.testbed.cell.push(evt)
 }
 
 //--------------------
@@ -146,60 +196,58 @@ func (tbc *testbedCell) backend() {
 type Testbed struct {
 	ctx    context.Context
 	cancel func()
-	donec  chan struct{}
+	eval   TestbedEvaluator
 	cell   *testbedCell
+	donec  chan struct{}
+	errc   chan error
 }
 
 // NewTestbed starts a test cell with the given behavior. The tester function
 // will be called for each event emitted by the behavior.
-func NewTestbed(behavior Behavior, tester func(evt Event) bool) *Testbed {
+func NewTestbed(behavior Behavior, evaluator TestbedEvaluator) *Testbed {
 	ctx, cancel := context.WithCancel(context.Background())
 	tb := &Testbed{
 		ctx:    ctx,
 		cancel: cancel,
+		eval:   evaluator,
 		donec:  make(chan struct{}),
-		cell:   goTestbedCell(ctx, behavior),
+		errc:   make(chan error),
 	}
-	go func() {
-		for {
-			select {
-			case <-tb.ctx.Done():
-				return
-			case evt := <-tb.cell.outc:
-				if tester(evt) {
-					tb.donec <- struct{}{}
-				}
-			}
-		}
-	}()
+	tb.cell = newTestbedCell(ctx, tb, behavior)
 	return tb
 }
 
-// Emit creates an event and sends it to the behavior.
-func (tb *Testbed) Emit(topic string, payloads ...interface{}) error {
-	evt, err := NewEvent(topic, payloads...)
-	if err != nil {
-		return err
-	}
-	tb.EmitEvent(evt)
-	return nil
+// Go runs the testbed rzbber and waits until test ends or a timeout.
+func (tb *Testbed) Go(runner TestbedRunner, timeout time.Duration) error {
+	go runner(newTestbedEmitter(tb))
+	return tb.wait(timeout)
 }
 
-// Emit sends an event to the behavior.
-func (tb *Testbed) EmitEvent(evt Event) {
-	tb.cell.inc <- evt
-}
-
-// Wait waits until test ends or a timeout.
-func (tb *Testbed) Wait(timeout time.Duration) error {
+// wait waits until a test end or error has been signalled or a
+// timeout happened.
+func (tb *Testbed) wait(timeout time.Duration) error {
 	defer tb.cancel()
 	now := time.Now()
 	select {
+	case err := <-tb.errc:
+		return err
 	case <-tb.donec:
 		return nil
 	case to := <-time.After(timeout):
 		waited := to.Sub(now)
 		return errors.New("timeout after " + waited.String())
+	}
+}
+
+// testEmittedEvent runs the evaluator and checks if the emitted
+// events are okay and all expectations have been fullfilled.
+func (tb *Testbed) testEmittedEvent(evt Event) {
+	ok, err := tb.eval(evt)
+	switch {
+	case err != nil:
+		tb.errc <- err
+	case ok:
+		tb.donec <- struct{}{}
 	}
 }
 
