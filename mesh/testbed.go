@@ -33,7 +33,7 @@ type TestbedRunner func(out Emitter)
 type TestbedEvaluator func(evt Event) (bool, error)
 
 //--------------------
-// TESTBED HELPERS
+// TESTBED MESH
 //--------------------
 
 // testbedMesh implements the Mesh interface.
@@ -73,6 +73,10 @@ func (tbm testbedMesh) Emitter(name string) (Emitter, error) {
 	return nil, fmt.Errorf("cell '%s' does not exist", name)
 }
 
+//--------------------
+// TESTBED CELL
+//--------------------
+
 // testbedCell runs the behavior and provides the needed interfaces.
 type testbedCell struct {
 	ctx      context.Context
@@ -108,16 +112,6 @@ func (tbc *testbedCell) Mesh() Mesh {
 	return testbedMesh{}
 }
 
-// push witers an event into the input channel.
-func (tbc *testbedCell) push(evt Event) error {
-	select {
-	case <-tbc.ctx.Done():
-		return errors.New("cell already terminated")
-	case tbc.inc <- evt:
-		return nil
-	}
-}
-
 // Pull implements mesh.Receptor.
 func (tbc *testbedCell) Pull() <-chan Event {
 	return tbc.inc
@@ -132,10 +126,27 @@ func (tbc *testbedCell) Emit(topic string, payloads ...interface{}) error {
 	return tbc.EmitEvent(evt)
 }
 
-// EmitEvent implements mesh.Emitter.
+// EmitEvent implements mesh.Emitter and evaluates the event.
 func (tbc *testbedCell) EmitEvent(evt Event) error {
-	tbc.testbed.testEmittedEvent(evt)
+	ok, err := tbc.testbed.eval(evt)
+	switch {
+	case ok:
+		tbc.testbed.donec <- struct{}{}
+	case err != nil:
+		tbc.testbed.errc <- err
+		return err
+	}
 	return nil
+}
+
+// push witers an event into the input channel.
+func (tbc *testbedCell) push(evt Event) error {
+	select {
+	case <-tbc.ctx.Done():
+		return errors.New("cell already terminated")
+	case tbc.inc <- evt:
+		return nil
+	}
 }
 
 // backend runs the behavior to test.
@@ -153,6 +164,10 @@ func (tbc *testbedCell) backend() {
 		})
 	}
 }
+
+//--------------------
+// TESTBED EMITTER
+//--------------------
 
 // testbedEmitter allows the testbed runner to emit events to the testbed.
 type testbedEmitter struct {
@@ -199,6 +214,7 @@ type Testbed struct {
 	eval   TestbedEvaluator
 	cell   *testbedCell
 	donec  chan struct{}
+	ranc   chan struct{}
 	errc   chan error
 }
 
@@ -211,6 +227,7 @@ func NewTestbed(behavior Behavior, evaluator TestbedEvaluator) *Testbed {
 		cancel: cancel,
 		eval:   evaluator,
 		donec:  make(chan struct{}),
+		ranc:   make(chan struct{}),
 		errc:   make(chan error),
 	}
 	tb.cell = newTestbedCell(ctx, tb, behavior)
@@ -219,8 +236,14 @@ func NewTestbed(behavior Behavior, evaluator TestbedEvaluator) *Testbed {
 
 // Go runs the testbed rzbber and waits until test ends or a timeout.
 func (tb *Testbed) Go(runner TestbedRunner, timeout time.Duration) error {
-	go runner(newTestbedEmitter(tb))
+	go tb.run(runner)
 	return tb.wait(timeout)
+}
+
+// run runs the testbed runner.
+func (tb *Testbed) run(runner TestbedRunner) {
+	runner(newTestbedEmitter(tb))
+	tb.ranc <- struct{}{}
 }
 
 // wait waits until a test end or error has been signalled or a
@@ -228,27 +251,22 @@ func (tb *Testbed) Go(runner TestbedRunner, timeout time.Duration) error {
 func (tb *Testbed) wait(timeout time.Duration) error {
 	defer tb.cancel()
 	now := time.Now()
-	select {
-	case err := <-tb.errc:
-		return err
-	case <-tb.donec:
-		return nil
-	case to := <-time.After(timeout):
-		waited := to.Sub(now)
-		return errors.New("timeout after " + waited.String())
+	done := 0
+	for done < 2 {
+		select {
+		case <-tb.ranc:
+			done++
+		case <-tb.donec:
+			done++
+		case err := <-tb.errc:
+			return err
+		case to := <-time.After(timeout):
+			waited := to.Sub(now)
+			return errors.New("timeout after " + waited.String())
+		}
 	}
-}
-
-// testEmittedEvent runs the evaluator and checks if the emitted
-// events are okay and all expectations have been fullfilled.
-func (tb *Testbed) testEmittedEvent(evt Event) {
-	ok, err := tb.eval(evt)
-	switch {
-	case err != nil:
-		tb.errc <- err
-	case ok:
-		tb.donec <- struct{}{}
-	}
+	// The async testbed runner and the tests are done.
+	return nil
 }
 
 // EOF

@@ -13,8 +13,53 @@ package mesh // import "tideland.dev/go/cells/mesh"
 
 import (
 	"context"
+	"errors"
 	"sync"
 )
+
+//--------------------
+// CELL SET
+//--------------------
+
+// cellSet manages a set of cells.
+type cellSet struct {
+	mu    sync.RWMutex
+	cells map[*cell]struct{}
+}
+
+// newCellSet creates an empty cell set.
+func newCellSet() *cellSet {
+	return &cellSet{
+		cells: make(map[*cell]struct{}),
+	}
+}
+
+// add adds another cell to the set. Already added
+// ones are ignored.
+func (cs *cellSet) add(c *cell) {
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+	cs.cells[c] = struct{}{}
+}
+
+// remove deletes a cell from the set.
+func (cs *cellSet) remove(c *cell) {
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+	delete(cs.cells, c)
+}
+
+// do perform f for each cell of the set.
+func (cs *cellSet) do(f func(c *cell) error) error {
+	cs.mu.RLock()
+	defer cs.mu.RUnlock()
+	for c := range cs.cells {
+		if err := f(c); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 //--------------------
 // CELL
@@ -28,8 +73,8 @@ type cell struct {
 	mesh     Mesh
 	behavior Behavior
 	in       *stream
-	inCells  map[*cell]struct{}
-	out      *streams
+	input    *cellSet
+	output   *cellSet
 	drop     func()
 }
 
@@ -41,8 +86,8 @@ func newCell(ctx context.Context, name string, m Mesh, b Behavior, drop func()) 
 		mesh:     m,
 		behavior: b,
 		in:       newStream(),
-		inCells:  make(map[*cell]struct{}),
-		out:      newStreams(),
+		input:    newCellSet(),
+		output:   newCellSet(),
 		drop:     drop,
 	}
 	go c.backend()
@@ -64,51 +109,90 @@ func (c *cell) Mesh() Mesh {
 	return nil
 }
 
-// subscribeTo adds the cell to the out-streams of the
+// subscribeTo adds this cell to the out-streams of the
 // given in-cell.
-func (c *cell) subscribeTo(inCell *cell) {
+func (c *cell) subscribeTo(ic *cell) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	inCell.out.add(c.in)
-	c.inCells[inCell] = struct{}{}
+	c.input.add(ic)
+	ic.output.add(c)
 }
 
-// unsubscribeFrom removes the cell from the out-streams of the
+// unsubscribeFrom removes this cell from the out-streams of the
 // given in-cell.
-func (c *cell) unsubscribeFrom(inCell *cell) {
+func (c *cell) unsubscribeFrom(ic *cell) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	inCell.out.remove(c.in)
-	delete(c.inCells, inCell)
+	c.input.remove(ic)
+	ic.output.remove(c)
 }
 
-// unsubscribeFromAll removes the subscription from all cells this
-// one subscribed to.
-func (c *cell) unsubscribeFromAll() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	for inCell := range c.inCells {
-		inCell.out.remove(c.in)
+// receive creates an passes an event to handle to the cell.
+func (c *cell) receive(topic string, payload ...interface{}) error {
+	evt, err := NewEvent(topic, payload...)
+	if err != nil {
+		return err
 	}
+	return c.receiveEvent(evt)
 }
 
-// backend runs as goroutine and cares for the behavior. When it ends
-// it will send a notification to all subscribers, unsubscribe from
-// them, and then tell the mesh that it's not available anymore.
+// receiveEvent passes an event to handle to the cell.
+func (c *cell) receiveEvent(evt Event) error {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if c.in == nil {
+		return errors.New("cell deactivated")
+	}
+	return c.in.EmitEvent(evt)
+}
+
+// shutdown deactivates the in-stream, unsubscribes from all cells
+// and tells the mesh that it's not available anymore.
+func (c *cell) shutdown() {
+	c.drop()
+	c.in = nil
+	c.input.do(func(ic *cell) error {
+		ic.output.remove(c)
+		return nil
+	})
+}
+
+// Pull implements Receptor.
+func (c *cell) Pull() <-chan Event {
+	return c.in.Pull()
+}
+
+// Emit implements Emitter.
+func (c *cell) Emit(topic string, payloads ...interface{}) error {
+	evt, err := NewEvent(topic, payloads...)
+	if err != nil {
+		return err
+	}
+	return c.EmitEvent(evt)
+}
+
+// EmitEvent implements Emitter.
+func (c *cell) EmitEvent(evt Event) error {
+	return c.output.do(func(oc *cell) error {
+		if err := oc.receiveEvent(evt); err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+// backend runs as goroutine and cares for the behavior.
 func (c *cell) backend() {
-	defer func() {
-		c.unsubscribeFromAll()
-		c.drop()
-	}()
-	if err := c.behavior.Go(c, c.in, c.out); err != nil {
+	defer c.shutdown()
+	if err := c.behavior.Go(c, c, c); err != nil {
 		// Notify subscribers about error.
-		c.out.Emit(TopicError, PayloadCellError{
+		c.Emit(TopicError, PayloadCellError{
 			CellName: c.name,
 			Error:    err.Error(),
 		})
 	} else {
 		// Notify subscribers about termination.
-		c.out.Emit(TopicTerminated, PayloadTermination{
+		c.Emit(TopicTerminated, PayloadTermination{
 			CellName: c.name,
 		})
 	}
