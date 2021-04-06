@@ -42,9 +42,9 @@ func TestCellSimple(t *testing.T) {
 	tbCollector := NewRequestBehavior(collector)
 	cCollector := newCell(ctx, "collector", meshStub{}, tbCollector, drop)
 
-	cCollector.in.Emit("one")
-	cCollector.in.Emit("two")
-	cCollector.in.Emit("three")
+	cCollector.receive("one")
+	cCollector.receive("two")
+	cCollector.receive("three")
 
 	assert.WaitClosed(sigc, time.Second)
 	assert.Length(topics, 3)
@@ -78,9 +78,9 @@ func TestCellChain(t *testing.T) {
 	cCollector := newCell(ctx, "collector", meshStub{}, tbCollector, drop)
 	cCollector.subscribeTo(cUpcaser)
 
-	cUpcaser.in.Emit("one")
-	cUpcaser.in.Emit("two")
-	cUpcaser.in.Emit("three")
+	cUpcaser.receive("one")
+	cUpcaser.receive("two")
+	cUpcaser.receive("three")
 
 	assert.WaitClosed(sigc, time.Second)
 	assert.Length(topics, 3)
@@ -88,9 +88,9 @@ func TestCellChain(t *testing.T) {
 
 	cCollector.unsubscribeFrom(cUpcaser)
 
-	cUpcaser.in.Emit("FOUR")
-	cUpcaser.in.Emit("FIVE")
-	cUpcaser.in.Emit("SIX")
+	cUpcaser.receive("FOUR")
+	cUpcaser.receive("FIVE")
+	cUpcaser.receive("SIX")
 
 	assert.Length(topics, 3)
 	assert.Equal(strings.Join(topics, " "), "ONE TWO THREE")
@@ -131,14 +131,14 @@ func TestCellAutoUnsubscribe(t *testing.T) {
 	cCollector := newCell(ctx, "collector", meshStub{}, NewRequestBehavior(collector), drop)
 	cCollector.subscribeTo(cFailer)
 
-	cForwarderA.in.Emit("foo")
-	cForwarderB.in.Emit("bar")
-	cForwarderA.in.Emit("baz")
+	cForwarderA.receive("foo")
+	cForwarderB.receive("bar")
+	cForwarderA.receive("baz")
 
 	assert.WaitClosed(sigc, time.Second)
 
-	cForwarderA.in.Emit("dont-care")
-	cForwarderB.in.Emit("dont-care")
+	cForwarderA.receive("dont-care")
+	cForwarderB.receive("dont-care")
 
 	foundc := make(chan interface{})
 

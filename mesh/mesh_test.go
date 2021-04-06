@@ -209,4 +209,35 @@ func TestMeshEmitter(t *testing.T) {
 	cancel()
 }
 
+// TestMeshStoppedCell verifies the handling of emittings to
+// stopped cells.
+func TestMeshStoppedCell(t *testing.T) {
+	assert := asserts.NewTesting(t, asserts.FailStop)
+	ctx, cancel := context.WithCancel(context.Background())
+	behaviorFunc := func(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
+		i := 0
+		for {
+			select {
+			case <-cell.Context().Done():
+				return nil
+			case <-in.Pull():
+				i++
+				if i >= 3 {
+					return nil
+				}
+			}
+		}
+	}
+	msh := mesh.New(ctx)
+	msh.Go("countdown", mesh.BehaviorFunc(behaviorFunc))
+
+	assert.NoError(msh.Emit("countdown", "one"))
+	assert.NoError(msh.Emit("countdown", "two"))
+	assert.NoError(msh.Emit("countdown", "three"))
+	assert.ErrorContains(msh.Emit("countdown", "four"), "timeout")
+	assert.ErrorContains(msh.Emit("countdown", "five"), "cell 'countdown' does not exist")
+
+	cancel()
+}
+
 // EOF

@@ -36,29 +36,27 @@ func TestAggregatorBehavior(t *testing.T) {
 		return words, nil
 	}
 	behavior := behaviors.NewAggregatorBehavior(map[string]bool{}, aggregator)
-	tester := func(evt mesh.Event) bool {
+	eval := func(evt mesh.Event) (bool, error) {
 		switch evt.Topic() {
 		case behaviors.TopicResetted:
-			return true
+			return true, nil
 		case behaviors.TopicAggregated:
 			var words map[string]bool
 			err := evt.Payload(&words)
 			assert.NoError(err)
 			assert.Length(words, count)
 		}
-		return false
+		return false, nil
 	}
-	tb := mesh.NewTestbed(behavior, tester)
-
-	// Run the tests and check if length of aggregated words matches.
-	for i := 0; i < count; i++ {
-		topic := strconv.Itoa(i)
-		tb.Emit(topic)
-	}
-	tb.Emit(behaviors.TopicAggregate)
-	tb.Emit(behaviors.TopicReset)
-
-	err := tb.Wait(time.Second)
+	tb := mesh.NewTestbed(behavior, eval)
+	err := tb.Go(func(out mesh.Emitter) {
+		for i := 0; i < count; i++ {
+			topic := strconv.Itoa(i)
+			out.Emit(topic)
+		}
+		out.Emit(behaviors.TopicAggregate)
+		out.Emit(behaviors.TopicReset)
+	}, time.Second)
 	assert.NoError(err)
 }
 

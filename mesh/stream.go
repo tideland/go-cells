@@ -13,7 +13,6 @@ package mesh // import "tideland.dev/go/cells/mesh"
 
 import (
 	"errors"
-	"sync"
 	"time"
 )
 
@@ -69,84 +68,25 @@ func (str *stream) Emit(topic string, payloads ...interface{}) error {
 
 // EmitEvent appends an event to the end of the stream. It retries to
 // append it to the buffer in case that it's full. The time will
-// increase. If it lasts too long, about 5 seconds, a timeout
-// error will be returned.
+// increase. If waiting is longer than 5 seconds a timeout error will
+// be returned.
 func (str *stream) EmitEvent(evt Event) error {
+	total := 5 * time.Second
 	wait := 50 * time.Millisecond
+	waited := 0 * time.Millisecond
 	for {
 		select {
 		case str.eventc <- evt:
 			return nil
 		default:
 			time.Sleep(wait)
+			waited += wait
 			wait += 50 * time.Millisecond
-			if wait > 5*time.Second {
+			if waited > total {
 				return errors.New("timeout")
 			}
 		}
 	}
-}
-
-//--------------------
-// STREAMS
-//--------------------
-
-// streams is a set of streans to emit to multiple
-// streams at once.
-type streams struct {
-	mu      sync.RWMutex
-	streams map[*stream]struct{}
-}
-
-// newStreams creates an empty set of streams.
-func newStreams() *streams {
-	return &streams{
-		streams: make(map[*stream]struct{}),
-	}
-}
-
-// add add a stream to the set of streams.
-func (strs *streams) add(as *stream) {
-	strs.mu.Lock()
-	defer strs.mu.Unlock()
-	strs.streams[as] = struct{}{}
-}
-
-// remove deletes a stream from the set of streams.
-func (strs *streams) remove(rs *stream) {
-	strs.mu.Lock()
-	defer strs.mu.Unlock()
-	delete(strs.streams, rs)
-}
-
-// removeAll deletes all streams from the set of streams.
-func (strs *streams) removeAll() {
-	strs.mu.Lock()
-	defer strs.mu.Unlock()
-	strs.streams = make(map[*stream]struct{})
-}
-
-// Emit creates a new event and appends it to the end of all
-// contained streams.
-func (strs *streams) Emit(topic string, payloads ...interface{}) error {
-	evt, err := NewEvent(topic, payloads...)
-	if err != nil {
-		return err
-	}
-	return strs.EmitEvent(evt)
-}
-
-// EmitEvent appends the given event to the end of all contained
-// streams.
-func (strs *streams) EmitEvent(evt Event) error {
-	strs.mu.RLock()
-	defer strs.mu.RUnlock()
-	for es := range strs.streams {
-		if err := es.EmitEvent(evt); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // EOF

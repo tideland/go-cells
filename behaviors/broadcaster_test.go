@@ -29,30 +29,21 @@ import (
 func TestBroadcasterBehavior(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	behavior := behaviors.NewBroadcasterBehavior()
-	topics := make(map[string]bool)
-	tester := func(evt mesh.Event) bool {
+	eval := func(evt mesh.Event) (bool, error) {
+		assert.Contains(evt.Topic(), []string{"one", "two", "three", "done", "testbed-terminated"})
 		if evt.Topic() == "done" {
-			return true
+			return true, nil
 		}
-		topics[evt.Topic()] = true
-		return false
+		return false, nil
 	}
-	tb := mesh.NewTestbed(behavior, tester)
-
-	// Run the tests and check if the emitted events have
-	// been collected.
-	tb.Emit("one")
-	tb.Emit("two")
-	tb.Emit("three")
-	tb.Emit("done")
-
-	err := tb.Wait(time.Second)
+	tb := mesh.NewTestbed(behavior, eval)
+	err := tb.Go(func(out mesh.Emitter) {
+		out.Emit("one")
+		out.Emit("two")
+		out.Emit("three")
+		out.Emit("done")
+	}, time.Second)
 	assert.NoError(err)
-
-	assert.True(topics["one"])
-	assert.True(topics["two"])
-	assert.True(topics["three"])
-	assert.False(topics["done"])
 }
 
 // EOF

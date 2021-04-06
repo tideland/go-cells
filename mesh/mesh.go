@@ -106,7 +106,7 @@ func (m *mesh) EmitEvent(name string, evt Event) error {
 	if emitCell == nil {
 		return fmt.Errorf("cell '%s' does not exist", name)
 	}
-	return emitCell.in.EmitEvent(evt)
+	return emitCell.receiveEvent(evt)
 }
 
 // Emitter implements Mesh.
@@ -120,7 +120,7 @@ func (m *mesh) Emitter(name string) (Emitter, error) {
 	namedEmitter := m.emitters[name]
 	if namedEmitter == nil {
 		namedEmitter = &emitter{
-			strean: emitCell.in,
+			cell: emitCell,
 		}
 		m.emitters[name] = namedEmitter
 	}

@@ -56,18 +56,19 @@ func TestComboBehavior(t *testing.T) {
 		return behaviors.CriterionDropFirst, nil, nil
 	}
 	behavior := behaviors.NewComboBehavior(matcher)
-	tester := func(evt mesh.Event) bool {
-		assert.Equal(evt.Topic(), behaviors.TopicCriterionDone)
-		var distance int
-		err := evt.Payload(&distance)
-		assert.NoError(err)
-		assert.Equal(distance, 50)
-		return true
+	eval := func(evt mesh.Event) (bool, error) {
+		switch evt.Topic() {
+		case behaviors.TopicCriterionDone:
+			var distance int
+			err := evt.Payload(&distance)
+			return distance == 50, err
+		case mesh.TopicTestbedTerminated:
+			return true, nil
+		}
+		return false, nil
 	}
-	tb := mesh.NewTestbed(behavior, tester)
-
-	// Run the tests.
-	go func() {
+	tb := mesh.NewTestbed(behavior, eval)
+	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < 100; i++ {
 			var topic string
 			if i == 25 || i == 75 {
@@ -75,12 +76,10 @@ func TestComboBehavior(t *testing.T) {
 			} else {
 				topic = generator.OneStringOf(topics...)
 			}
-			err := tb.Emit(topic)
+			err := out.Emit(topic)
 			assert.NoError(err)
 		}
-	}()
-
-	err := tb.Wait(5 * time.Second)
+	}, time.Second)
 	assert.NoError(err)
 }
 

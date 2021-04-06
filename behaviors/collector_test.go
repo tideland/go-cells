@@ -35,30 +35,27 @@ func TestCollectorBehavior(t *testing.T) {
 		return mesh.NewEvent("length", l)
 	}
 	behavior := behaviors.NewCollectorBehavior(10, processor)
-	tester := func(evt mesh.Event) bool {
+	eval := func(evt mesh.Event) (bool, error) {
 		switch evt.Topic() {
 		case "length":
 			var l int
 			err := evt.Payload(&l)
 			assert.NoError(err)
 			assert.Equal(l, 10)
-			return false
+			return false, nil
 		case behaviors.TopicResetted:
-			return true
+			return true, nil
 		}
-		return false
+		return false, nil
 	}
-	tb := mesh.NewTestbed(behavior, tester)
-
-	// Run the tests and check length and resetting.
-	for _, topic := range generator.Words(25) {
-		tb.Emit(topic)
-	}
-
-	tb.Emit(behaviors.TopicProcess)
-	tb.Emit(behaviors.TopicReset)
-
-	err := tb.Wait(time.Second)
+	tb := mesh.NewTestbed(behavior, eval)
+	err := tb.Go(func(out mesh.Emitter) {
+		for _, topic := range generator.Words(25) {
+			out.Emit(topic)
+		}
+		out.Emit(behaviors.TopicProcess)
+		out.Emit(behaviors.TopicReset)
+	}, time.Second)
 	assert.NoError(err)
 }
 

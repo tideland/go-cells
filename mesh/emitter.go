@@ -14,21 +14,17 @@ package mesh // import "tideland.dev/go/cells/mesh"
 // emitter allows the continuous emitting of events to a cell
 // without having to resolve the cell name each time.
 type emitter struct {
-	strean *stream
+	cell *cell
 }
 
 // Emit implements Emitter.
 func (e *emitter) Emit(topic string, payloads ...interface{}) error {
-	evt, err := NewEvent(topic, payloads)
-	if err != nil {
-		return err
-	}
-	return e.EmitEvent(evt)
+	return e.cell.receive(topic, payloads...)
 }
 
 // EmitEvent implements Emitter.
 func (e *emitter) EmitEvent(evt Event) error {
-	return e.strean.EmitEvent(evt)
+	return e.cell.receiveEvent(evt)
 }
 
 // EOF
