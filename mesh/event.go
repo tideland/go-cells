@@ -26,6 +26,7 @@ import (
 // when a receiving cell accesses it.
 type Event struct {
 	timestamp time.Time
+	emitters  []string
 	topic     string
 	payload   json.RawMessage
 }
@@ -96,8 +97,11 @@ func (evt Event) Payload(payload interface{}) error {
 // String implements fmt.Stringer.
 func (evt Event) String() string {
 	return fmt.Sprintf(
-		"Event{Timestamp:%s Topic:%v Payload:%v}",
-		evt.timestamp.Format(time.RFC3339Nano), evt.topic, string(evt.payload),
+		"Event{Timestamp:%s Emitters:%v Topic:%v Payload:%v}",
+		evt.timestamp.Format(time.RFC3339Nano),
+		evt.emitters,
+		evt.topic,
+		string(evt.payload),
 	)
 }
 
@@ -105,10 +109,12 @@ func (evt Event) String() string {
 func (evt Event) MarshalJSON() ([]byte, error) {
 	tmp := struct {
 		Timestamp time.Time       `json:"timestamp"`
+		Emitters  []string        `json:"emitters,omitempty"`
 		Topic     string          `json:"topic"`
 		Payload   json.RawMessage `json:"payload,omitempty"`
 	}{
 		Timestamp: evt.timestamp,
+		Emitters:  evt.emitters,
 		Topic:     evt.topic,
 		Payload:   evt.payload,
 	}
@@ -119,6 +125,7 @@ func (evt Event) MarshalJSON() ([]byte, error) {
 func (evt *Event) UnmarshalJSON(data []byte) error {
 	tmp := struct {
 		Timestamp time.Time       `json:"timestamp"`
+		Emitters  []string        `json:"emitters,omitempty"`
 		Topic     string          `json:"topic"`
 		Payload   json.RawMessage `json:"payload,omitempty"`
 	}{}
@@ -126,9 +133,16 @@ func (evt *Event) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	evt.timestamp = tmp.Timestamp
+	evt.emitters = tmp.Emitters
 	evt.topic = tmp.Topic
 	evt.payload = tmp.Payload
 	return nil
+}
+
+// appendEmitter is used by the different emitters to signal their a
+// sender or passer of an event.
+func (evt *Event) appendEmitter(name string) {
+	evt.emitters = append(evt.emitters, name)
 }
 
 // EOF
