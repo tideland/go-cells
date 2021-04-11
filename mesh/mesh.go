@@ -106,6 +106,7 @@ func (m *mesh) EmitEvent(name string, evt Event) error {
 	if emitCell == nil {
 		return fmt.Errorf("cell '%s' does not exist", name)
 	}
+	evt.initEmitters()
 	return emitCell.receiveEvent(evt)
 }
 

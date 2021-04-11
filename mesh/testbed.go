@@ -128,6 +128,7 @@ func (tbc *testbedCell) Emit(topic string, payloads ...interface{}) error {
 
 // EmitEvent implements mesh.Emitter and evaluates the event.
 func (tbc *testbedCell) EmitEvent(evt Event) error {
+	evt.appendEmitter(tbc.Name())
 	ok, err := tbc.testbed.eval(evt)
 	switch {
 	case ok:
@@ -192,6 +193,7 @@ func (tbe *testbedEmitter) Emit(topic string, payloads ...interface{}) error {
 
 // Emit sends an event to the behavior.
 func (tbe *testbedEmitter) EmitEvent(evt Event) error {
+	evt.initEmitters()
 	return tbe.testbed.cell.push(evt)
 }
 

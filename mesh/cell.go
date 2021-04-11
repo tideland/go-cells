@@ -173,6 +173,7 @@ func (c *cell) Emit(topic string, payloads ...interface{}) error {
 
 // EmitEvent implements Emitter.
 func (c *cell) EmitEvent(evt Event) error {
+	evt.appendEmitter(c.name)
 	return c.output.do(func(oc *cell) error {
 		if err := oc.receiveEvent(evt); err != nil {
 			return err

@@ -40,7 +40,7 @@ func TestNewMesh(t *testing.T) {
 func TestMeshGo(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	ctx, cancel := context.WithCancel(context.Background())
-	sigc := make(chan interface{})
+	sigc := asserts.MakeWaitChan()
 	behaviorFunc := func(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
 		sigc <- cell.Name()
 		return nil
@@ -59,7 +59,7 @@ func TestMeshGo(t *testing.T) {
 func TestMeshSubscriptions(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	ctx, cancel := context.WithCancel(context.Background())
-	sigc := make(chan interface{})
+	sigc := asserts.MakeWaitChan()
 	forwardFunc := func(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
 		for {
 			select {
@@ -139,7 +139,7 @@ func TestMeshSubscriptions(t *testing.T) {
 func TestMeshEmit(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	ctx, cancel := context.WithCancel(context.Background())
-	sigc := make(chan interface{})
+	sigc := asserts.MakeWaitChan()
 	behaviorFunc := func(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
 		i := 0
 		for {
@@ -176,7 +176,7 @@ func TestMeshEmit(t *testing.T) {
 func TestMeshEmitter(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	ctx, cancel := context.WithCancel(context.Background())
-	sigc := make(chan interface{})
+	sigc := asserts.MakeWaitChan()
 	behaviorFunc := func(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
 		i := 0
 		for {
@@ -236,6 +236,73 @@ func TestMeshStoppedCell(t *testing.T) {
 	assert.NoError(msh.Emit("countdown", "three"))
 	assert.ErrorContains(msh.Emit("countdown", "four"), "timeout")
 	assert.ErrorContains(msh.Emit("countdown", "five"), "cell 'countdown' does not exist")
+
+	cancel()
+}
+
+// TestMeshEmitters verifies different emittings and re-emittings
+// and the according emitting entries.
+func TestMeshEnitters(t *testing.T) {
+	assert := asserts.NewTesting(t, asserts.FailStop)
+	ctx, cancel := context.WithCancel(context.Background())
+	sigc := asserts.MakeWaitChan()
+	collectorFunc := func(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
+		emitters := make(map[string]bool)
+		for {
+			select {
+			case <-cell.Context().Done():
+				return nil
+			case evt := <-in.Pull():
+				emitters[cell.Name()+" :: "+evt.Topic()+" :: "+evt.Emitters()] = true
+				switch evt.Topic() {
+				case "emit":
+					out.Emit("emitted")
+				case "re-emit":
+					if cell.Name() != "third" {
+						out.EmitEvent(evt)
+					}
+				case "done":
+					if evt.HasPayload() {
+						var pl map[string]bool
+						if err := evt.Payload(&pl); err != nil {
+							return err
+						}
+						for emitter := range pl {
+							emitters[emitter] = true
+						}
+					}
+					if cell.Name() == "third" {
+						sigc <- emitters
+					} else {
+						out.Emit("done", emitters)
+					}
+				}
+			}
+		}
+	}
+	msh := mesh.New(ctx)
+	msh.Go("first", mesh.BehaviorFunc(collectorFunc))
+	msh.Go("second", mesh.BehaviorFunc(collectorFunc))
+	msh.Go("third", mesh.BehaviorFunc(collectorFunc))
+	msh.Subscribe("first", "second")
+	msh.Subscribe("second", "third")
+
+	msh.Emit("first", "anything")
+	msh.Emit("first", "emit")
+	msh.Emit("first", "re-emit")
+	msh.Emit("first", "done")
+
+	assert.Wait(sigc, map[string]bool{
+		"first :: anything :: /":            true,
+		"first :: emit :: /":                true,
+		"first :: re-emit :: /":             true,
+		"first :: done :: /":                true,
+		"second :: emitted :: first":        true,
+		"second :: re-emit :: /first":       true,
+		"second :: done :: first":           true,
+		"third :: re-emit :: /first/second": true,
+		"third :: done :: second":           true,
+	}, time.Second)
 
 	cancel()
 }

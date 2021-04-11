@@ -14,6 +14,7 @@ package mesh // import "tideland.dev/go/cells/mesh"
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -70,6 +71,23 @@ func NewEvent(topic string, payloads ...interface{}) (Event, error) {
 // Timestamp returns the event timestamp.
 func (evt Event) Timestamp() time.Time {
 	return evt.timestamp
+}
+
+// Emitters returns an emitters path aloowing to see
+// where an event has been emitted or simply re-emitted.
+// The path layouts are
+//
+//     / is emitted via the mesh,
+//     /foo is emitted by mesh and re-emitted by foo,
+//     foo is emitted by foo,
+//     foo/bar is emitted by foo and re-emitted by bar.
+//
+// So also longer paths like /foo/bar/baz are possible.
+func (evt Event) Emitters() string {
+	if len(evt.emitters) == 1 {
+		return evt.emitters[0]
+	}
+	return evt.emitters[0] + strings.Join(evt.emitters[1:], "/")
 }
 
 // Topic returns the event topic.
@@ -137,6 +155,11 @@ func (evt *Event) UnmarshalJSON(data []byte) error {
 	evt.topic = tmp.Topic
 	evt.payload = tmp.Payload
 	return nil
+}
+
+// initEmitters sets the emitters to the mesh value.
+func (evt *Event) initEmitters() {
+	evt.emitters = []string{"/"}
 }
 
 // appendEmitter is used by the different emitters to signal their a
