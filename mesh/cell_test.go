@@ -30,25 +30,17 @@ import (
 func TestCellSimple(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	ctx, cancel := context.WithCancel(context.Background())
-	topics := []string{}
-	sigc := make(chan interface{})
+	sigc := asserts.MakeWaitChan()
 	collector := func(cell Cell, evt Event, out Emitter) error {
-		topics = append(topics, evt.Topic())
-		if len(topics) == 3 {
-			close(sigc)
-		}
+		close(sigc)
 		return nil
 	}
 	tbCollector := NewRequestBehavior(collector)
 	cCollector := newCell(ctx, "collector", meshStub{}, tbCollector, drop)
 
 	cCollector.receive("one")
-	cCollector.receive("two")
-	cCollector.receive("three")
 
 	assert.WaitClosed(sigc, time.Second)
-	assert.Length(topics, 3)
-	assert.Equal(strings.Join(topics, " "), "one two three")
 
 	cancel()
 }

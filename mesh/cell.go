@@ -15,6 +15,7 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"sync/atomic"
 )
 
 //--------------------
@@ -68,6 +69,7 @@ func (cs *cellSet) do(f func(c *cell) error) error {
 // cell runs a behevior networked with other cells.
 type cell struct {
 	mu       sync.RWMutex
+	active   atomic.Value
 	ctx      context.Context
 	name     string
 	mesh     Mesh
@@ -90,6 +92,7 @@ func newCell(ctx context.Context, name string, m Mesh, b Behavior, drop func()) 
 		output:   newCellSet(),
 		drop:     drop,
 	}
+	c.active.Store(true)
 	go c.backend()
 	return c
 }
@@ -138,9 +141,7 @@ func (c *cell) receive(topic string, payload ...interface{}) error {
 
 // receiveEvent passes an event to handle to the cell.
 func (c *cell) receiveEvent(evt Event) error {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	if c.in == nil {
+	if !c.active.Load().(bool) {
 		return errors.New("cell deactivated")
 	}
 	return c.in.EmitEvent(evt)
@@ -149,8 +150,8 @@ func (c *cell) receiveEvent(evt Event) error {
 // shutdown deactivates the in-stream, unsubscribes from all cells
 // and tells the mesh that it's not available anymore.
 func (c *cell) shutdown() {
+	c.active.Store(false)
 	c.drop()
-	c.in = nil
 	c.input.do(func(ic *cell) error {
 		ic.output.remove(c)
 		return nil
@@ -173,6 +174,7 @@ func (c *cell) Emit(topic string, payloads ...interface{}) error {
 
 // EmitEvent implements Emitter.
 func (c *cell) EmitEvent(evt Event) error {
+	evt.appendEmitter(c.name)
 	return c.output.do(func(oc *cell) error {
 		if err := oc.receiveEvent(evt); err != nil {
 			return err
