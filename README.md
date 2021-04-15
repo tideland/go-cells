@@ -16,6 +16,16 @@ runs an individual developed and/or configured behavior with an own state.
 
 I hope you like it. ;)
 
+## Behaviors
+
+The project already contains some standard behaviors, the number is still growing.
+
+* **Aggregator** aggregates events and emits each aggregated value.
+* **Broadcaster** simply emits received events to all subscribers.
+* **Callback** calls a number of passed functions for each received event.
+* **Collector** collects events which can be processed on demand.
+* **Combo** waits for a user-defined combination of events.
+
 ## Contributors
 
 - Frank Mueller (https://github.com/themue / https://github.com/tideland / https://tideland.dev)
