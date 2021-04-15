@@ -68,9 +68,9 @@ func (b *comboBehavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) e
 					b.sink.Clear()
 				case CriterionKeep:
 				case CriterionDropFirst:
-					b.sink.PullFirst()
+					b.sink.Shift()
 				case CriterionDropLast:
-					b.sink.PullLast()
+					b.sink.Pop()
 				default:
 					return fmt.Errorf("invalid criterion matcher result: %v", matches)
 				}

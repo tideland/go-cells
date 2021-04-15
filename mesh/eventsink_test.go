@@ -25,63 +25,100 @@ import (
 // TESTS
 //--------------------
 
-// TestEventSinkSimple verifies the standard functions of the event sink.
-func TestEventSinkSimple(t *testing.T) {
+// TestEventSinkPushPop verifies pushing and popping operations.
+func TestEventSinkPushPop(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 
-	// Empty limited sink.
 	max := 5
 	sink := mesh.NewEventSink(max)
 	assert.Length(sink, 0)
-	first, ok := sink.PeekFirst()
-	assert.True(mesh.IsNilEvent(first))
-	assert.False(ok)
-	last, ok := sink.PeekLast()
-	assert.True(mesh.IsNilEvent(last))
-	assert.False(ok)
-	at, ok := sink.PeekAt(-1)
-	assert.True(mesh.IsNilEvent(at))
-	assert.False(ok)
-	at, ok = sink.PeekAt(1337)
-	assert.True(mesh.IsNilEvent(at))
-	assert.False(ok)
 
-	// Fill empty sink.
-	evts := generateEvents(2 * max)
-	for _, evt := range evts {
+	evts := generateEvents(max)
+	for i, evt := range evts {
 		l := sink.Push(evt)
-		assert.True(l <= max)
+		assert.Equal(l, i+1)
 	}
 	assert.Length(sink, max)
-	first, ok = sink.PeekFirst()
-	assert.OK(ok)
-	assert.Equal(first, evts[len(evts)-max])
-	last, ok = sink.PeekLast()
-	assert.OK(ok)
-	assert.Equal(last, evts[len(evts)-1])
 
-	// Filled limited sink.
-	sink = mesh.NewEventSink(max, evts...)
+	evts = generateEvents(1)
+	evtA := evts[0]
+	l := sink.Push(evtA)
+	assert.Equal(l, max)
 	assert.Length(sink, max)
-	first, ok = sink.PeekFirst()
-	assert.OK(ok)
-	assert.Equal(first, evts[len(evts)-max])
-	last, ok = sink.PeekLast()
-	assert.OK(ok)
-	assert.Equal(last, evts[len(evts)-1])
-	first = sink.PullFirst()
-	assert.Equal(first, evts[len(evts)-max])
-	assert.Length(sink, max-1)
 
-	// Filled unlimited sink.
-	sink = mesh.NewEventSink(0, evts...)
-	assert.Length(sink, len(evts))
-	first, ok = sink.PeekFirst()
-	assert.OK(ok)
-	assert.Equal(first, evts[0])
-	last, ok = sink.PeekLast()
-	assert.OK(ok)
-	assert.Equal(last, evts[len(evts)-1])
+	evtB, l := sink.Pop()
+	assert.Equal(evtA, evtB)
+	assert.Equal(l, max-1)
+
+	for i := max - 1; i > 0; i-- {
+		_, l = sink.Pop()
+		assert.Equal(l, i-1)
+	}
+	assert.Length(sink, 0)
+}
+
+// TestEventSinkUnshiftShift verifies unshifting and shifting operations.
+func TestEventSinkUnshiftShift(t *testing.T) {
+	assert := asserts.NewTesting(t, asserts.FailStop)
+
+	max := 5
+	sink := mesh.NewEventSink(max)
+	assert.Length(sink, 0)
+
+	evts := generateEvents(max)
+	for i, evt := range evts {
+		l := sink.Unshift(evt)
+		assert.Equal(l, i+1)
+	}
+	assert.Length(sink, max)
+
+	evts = generateEvents(1)
+	evtA := evts[0]
+	l := sink.Unshift(evtA)
+	assert.Equal(l, max)
+	assert.Length(sink, max)
+
+	evtB, l := sink.Shift()
+	assert.Equal(evtA, evtB)
+	assert.Equal(l, max-1)
+
+	for i := max - 1; i > 0; i-- {
+		_, l = sink.Shift()
+		assert.Equal(l, i-1)
+	}
+	assert.Length(sink, 0)
+}
+
+// TestEventSinkFirstLastPeek verifies reading access to the sink.
+func TestEventSinkFirstLastPeek(t *testing.T) {
+	assert := asserts.NewTesting(t, asserts.FailStop)
+
+	max := 5
+	sink := mesh.NewEventSink(max)
+	assert.Length(sink, 0)
+
+	evts := generateEvents(max)
+	evtFirst := evts[0]
+	evtLast := evts[max-1]
+	evtMid := evts[2]
+
+	for _, evt := range evts {
+		sink.Push(evt)
+	}
+	assert.Length(sink, max)
+
+	first, ok := sink.First()
+	assert.True(ok)
+	last, ok := sink.Last()
+	assert.True(ok)
+	mid, ok := sink.Peek(2)
+	assert.True(ok)
+
+	assert.Equal(first, evtFirst)
+	assert.Equal(last, evtLast)
+	assert.Equal(mid, evtMid)
+
+	assert.Length(sink, max)
 }
 
 // TestEventSinkDo verifies the iterating over a sink.

@@ -29,14 +29,14 @@ type EventSinkReader interface {
 	Len() int
 
 	// PeekFirst returns the first of the collected events.
-	PeekFirst() (Event, bool)
+	First() (Event, bool)
 
 	// PeekLast returns the last of the collected event datas.
-	PeekLast() (Event, bool)
+	Last() (Event, bool)
 
 	// PeekAt returns an event at a given index and true if it
 	// exists, otherwise nil and false.
-	PeekAt(index int) (Event, bool)
+	Peek(index int) (Event, bool)
 
 	// Do iterates over all collected events.
 	Do(do EventSinkDoFunc) error
@@ -66,7 +66,7 @@ func NewEventSink(max int, evts ...Event) *EventSink {
 	return s
 }
 
-// Push adds a new event to the sink.
+// Push adds an event to the end of the sink.
 func (s *EventSink) Push(evt Event) int {
 	s.events = append(s.events, evt)
 	if s.max > 0 && len(s.events) > s.max {
@@ -75,24 +75,64 @@ func (s *EventSink) Push(evt Event) int {
 	return len(s.events)
 }
 
-// PullFirst returns and removed the first event of the sink.
-func (s *EventSink) PullFirst() Event {
-	var evt Event
-	if len(s.events) > 0 {
-		evt = s.events[0]
-		s.events = s.events[1:]
+// Pop retrieves and removes the last event from the sink
+// and also returns the new length.
+func (s *EventSink) Pop() (Event, int) {
+	if len(s.events) == 0 {
+		return nilEvent, 0
 	}
-	return evt
+	l := len(s.events) - 1
+	evt := s.events[l]
+	s.events = s.events[:l]
+	return evt, l
 }
 
-// PullLast returns and removed the last event of the sink.
-func (s *EventSink) PullLast() Event {
-	var evt Event
-	if len(s.events) > 0 {
-		evt = s.events[len(s.events)-1]
+// Unshift adds an event to the begin of the sink.
+func (s *EventSink) Unshift(evt Event) int {
+	s.events = append([]Event{evt}, s.events...)
+	if s.max > 0 && len(s.events) > s.max {
 		s.events = s.events[:len(s.events)-1]
 	}
-	return evt
+	return len(s.events)
+}
+
+// Shift returns and removes the first event of the sink
+// and also returns the new length.
+func (s *EventSink) Shift() (Event, int) {
+	if len(s.events) == 0 {
+		return nilEvent, 0
+	}
+	l := len(s.events) - 1
+	evt := s.events[0]
+	s.events = s.events[1:]
+	return evt, l
+}
+
+// First allows a look at the first event of the sink if it
+// exists. Otherwise nil and false will be returned.
+func (s *EventSink) First() (Event, bool) {
+	if len(s.events) < 1 {
+		return nilEvent, false
+	}
+	return s.events[0], true
+}
+
+// Last allows a look at the last event of the sink if it
+// exists. Otherwise nil and false will be returned.
+func (s *EventSink) Last() (Event, bool) {
+	if len(s.events) < 1 {
+		return nilEvent, false
+	}
+	return s.events[len(s.events)-1], true
+}
+
+// Peek allows a look at the indexed event of the sink if it
+// exists. Otherwise nil and false will be returned.
+func (s *EventSink) Peek(index int) (Event, bool) {
+	if index < 0 || index > len(s.events)-1 {
+		return nilEvent, false
+	}
+	return s.events[index], true
 }
 
 // Clear removes all collected events.
@@ -103,33 +143,6 @@ func (s *EventSink) Clear() {
 // Len returns the number of events in the sink.
 func (s *EventSink) Len() int {
 	return len(s.events)
-}
-
-// PeekFirst allows a look at the first event of the sink if it
-// exists. Otherwise nil and false will be returned.
-func (s *EventSink) PeekFirst() (Event, bool) {
-	if len(s.events) < 1 {
-		return nilEvent, false
-	}
-	return s.events[0], true
-}
-
-// PeekFirst allows a look at the last event of the sink if it
-// exists. Otherwise nil and false will be returned.
-func (s *EventSink) PeekLast() (Event, bool) {
-	if len(s.events) < 1 {
-		return nilEvent, false
-	}
-	return s.events[len(s.events)-1], true
-}
-
-// PeekFirst allows a look at the indexed event of the sink if it
-// exists. Otherwise nil and false will be returned.
-func (s *EventSink) PeekAt(index int) (Event, bool) {
-	if index < 0 || index > len(s.events)-1 {
-		return nilEvent, false
-	}
-	return s.events[index], true
 }
 
 // Do allows to iterate over all events of the sink and perform a
@@ -205,8 +218,8 @@ func EventSinkFold(r EventSinkReader, inject Event, fold EventSinkFoldFunc) (Eve
 
 // EventSinkDuration returns the duration between the first and the last event.
 func EventSinkDuration(r EventSinkReader) time.Duration {
-	first, fok := r.PeekFirst()
-	last, lok := r.PeekLast()
+	first, fok := r.First()
+	last, lok := r.Last()
 	if fok == false || lok == false {
 		return 0
 	}
