@@ -25,6 +25,7 @@ The project already contains some standard behaviors, the number is still growin
 * **Callback** calls a number of passed functions for each received event.
 * **Collector** collects events which can be processed on demand.
 * **Combo** waits for a user-defined combination of events.
+* **Condition** tests events for conditions using a tester function and calls a processor then.
 
 ## Contributors
 

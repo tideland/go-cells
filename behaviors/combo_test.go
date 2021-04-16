@@ -67,6 +67,7 @@ func TestComboBehavior(t *testing.T) {
 		}
 		return false, nil
 	}
+	// Run test.
 	tb := mesh.NewTestbed(behavior, eval)
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < 100; i++ {
