@@ -32,14 +32,14 @@ func TestCallbackBehavior(t *testing.T) {
 	count := 50
 	countA := 0
 	countB := 0
-	callbackA := func(evt mesh.Event, out mesh.Emitter) error {
+	callbackA := func(evt *mesh.Event, out mesh.Emitter) error {
 		return out.Emit("a")
 	}
-	callbackB := func(evt mesh.Event, out mesh.Emitter) error {
+	callbackB := func(evt *mesh.Event, out mesh.Emitter) error {
 		return out.Emit("b")
 	}
 	behavior := behaviors.NewCallbackBehavior(callbackA, callbackB)
-	eval := func(evt mesh.Event) (bool, error) {
+	eval := func(evt *mesh.Event) (bool, error) {
 		switch evt.Topic() {
 		case "a":
 			countA++

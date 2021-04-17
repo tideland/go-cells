@@ -30,7 +30,7 @@ type TestbedRunner func(out Emitter)
 // in a Testbed. It has to return false as long as not all wanted events
 // have been returned and true once all expectations have been fullfilled.
 // Internal errors can be explicitely returned.
-type TestbedEvaluator func(evt Event) (bool, error)
+type TestbedEvaluator func(evt *Event) (bool, error)
 
 //--------------------
 // TESTBED MESH
@@ -64,7 +64,7 @@ func (tbm testbedMesh) Emit(name, topic string, payloads ...interface{}) error {
 }
 
 // EmitEvent implements mesh.Mesh and always returns an error.
-func (tbm testbedMesh) EmitEvent(name string, evt Event) error {
+func (tbm testbedMesh) EmitEvent(name string, evt *Event) error {
 	return fmt.Errorf("cell '%s' does not exist", name)
 }
 
@@ -82,7 +82,7 @@ type testbedCell struct {
 	ctx      context.Context
 	testbed  *Testbed
 	behavior Behavior
-	inc      chan Event
+	inc      chan *Event
 }
 
 // newTestbedCell initializes the testbed cell and spawns the goroutine.
@@ -91,7 +91,7 @@ func newTestbedCell(ctx context.Context, tb *Testbed, behavior Behavior) *testbe
 		ctx:      ctx,
 		testbed:  tb,
 		behavior: behavior,
-		inc:      make(chan Event),
+		inc:      make(chan *Event),
 	}
 	go tbc.backend()
 	return tbc
@@ -113,7 +113,7 @@ func (tbc *testbedCell) Mesh() Mesh {
 }
 
 // Pull implements mesh.Receptor.
-func (tbc *testbedCell) Pull() <-chan Event {
+func (tbc *testbedCell) Pull() <-chan *Event {
 	return tbc.inc
 }
 
@@ -127,7 +127,7 @@ func (tbc *testbedCell) Emit(topic string, payloads ...interface{}) error {
 }
 
 // EmitEvent implements mesh.Emitter and evaluates the event.
-func (tbc *testbedCell) EmitEvent(evt Event) error {
+func (tbc *testbedCell) EmitEvent(evt *Event) error {
 	evt.appendEmitter(tbc.Name())
 	ok, err := tbc.testbed.eval(evt)
 	switch {
@@ -141,7 +141,7 @@ func (tbc *testbedCell) EmitEvent(evt Event) error {
 }
 
 // push witers an event into the input channel.
-func (tbc *testbedCell) push(evt Event) error {
+func (tbc *testbedCell) push(evt *Event) error {
 	select {
 	case <-tbc.ctx.Done():
 		return errors.New("cell already terminated")
@@ -192,7 +192,7 @@ func (tbe *testbedEmitter) Emit(topic string, payloads ...interface{}) error {
 }
 
 // Emit sends an event to the behavior.
-func (tbe *testbedEmitter) EmitEvent(evt Event) error {
+func (tbe *testbedEmitter) EmitEvent(evt *Event) error {
 	evt.initEmitters()
 	return tbe.testbed.cell.push(evt)
 }

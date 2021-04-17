@@ -20,10 +20,10 @@ import (
 //--------------------
 
 // ConditionTesterFunc checks if an event matches a wanted state.
-type ConditionTesterFunc func(evt mesh.Event) bool
+type ConditionTesterFunc func(evt *mesh.Event) bool
 
 // ConditionProcessorFunc handles the matching event.
-type ConditionProcessorFunc func(cell mesh.Cell, evt mesh.Event, out mesh.Emitter) error
+type ConditionProcessorFunc func(cell mesh.Cell, evt *mesh.Event, out mesh.Emitter) error
 
 // conditionBehavior implements the condition behavior.
 type conditionBehavior struct {

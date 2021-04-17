@@ -128,14 +128,14 @@ func TestEventSinkDo(t *testing.T) {
 	// Do without error.
 	evts := generateEvents(20)
 	sink := mesh.NewEventSink(0, evts...)
-	err := sink.Do(func(i int, evt mesh.Event) error {
+	err := sink.Do(func(i int, evt *mesh.Event) error {
 		assert.Equal(evt, evts[i])
 		return nil
 	})
 	assert.NoError(err)
 
 	// Do with error.
-	err = sink.Do(func(i int, evt mesh.Event) error {
+	err = sink.Do(func(i int, evt *mesh.Event) error {
 		return errors.New("ouch")
 	})
 	assert.ErrorContains(err, "ouch")
@@ -148,24 +148,24 @@ func TestEventSinkFunctions(t *testing.T) {
 	sink := mesh.NewEventSink(0, generateTopicEvents(topics)...)
 
 	// Filter events and reutrn error.
-	evts, err := mesh.EventSinkFilter(sink, func(i int, evt mesh.Event) (bool, error) {
+	evts, err := mesh.EventSinkFilter(sink, func(i int, evt *mesh.Event) (bool, error) {
 		return evt.Topic() == "a", nil
 	})
 	assert.NoError(err)
 	assert.Length(evts, 4)
-	evts, err = mesh.EventSinkFilter(sink, func(i int, evt mesh.Event) (bool, error) {
+	evts, err = mesh.EventSinkFilter(sink, func(i int, evt *mesh.Event) (bool, error) {
 		return false, errors.New("ouch")
 	})
 	assert.ErrorContains(err, "ouch")
 	assert.Length(evts, 0)
 
 	// Match and mismatch events.
-	ok, err := mesh.EventSinkMatch(sink, func(i int, evt mesh.Event) (bool, error) {
+	ok, err := mesh.EventSinkMatch(sink, func(i int, evt *mesh.Event) (bool, error) {
 		return evt.Topic() == "a" || evt.Topic() == "b", nil
 	})
 	assert.NoError(err)
 	assert.OK(ok)
-	ok, err = mesh.EventSinkMatch(sink, func(i int, evt mesh.Event) (bool, error) {
+	ok, err = mesh.EventSinkMatch(sink, func(i int, evt *mesh.Event) (bool, error) {
 		return evt.Topic() == "a" || evt.Topic() == "x", nil
 	})
 	assert.NoError(err)
@@ -174,7 +174,7 @@ func TestEventSinkFunctions(t *testing.T) {
 	// Fold events.
 	inject, err := mesh.NewEvent("counts", make(map[string]int))
 	assert.NoError(err)
-	facc, err := mesh.EventSinkFold(sink, inject, func(i int, acc, evt mesh.Event) (mesh.Event, error) {
+	facc, err := mesh.EventSinkFold(sink, inject, func(i int, acc, evt *mesh.Event) (*mesh.Event, error) {
 		payload := make(map[string]int)
 		err := acc.Payload(&payload)
 		assert.NoError(err)
@@ -194,7 +194,7 @@ func TestEventSinkFunctions(t *testing.T) {
 //--------------------
 
 // generateEvents generates a number of events for tests.
-func generateEvents(count int) []mesh.Event {
+func generateEvents(count int) []*mesh.Event {
 	generator := generators.New(generators.FixedRand())
 	topics := generator.Words(count)
 	return generateTopicEvents(topics)
@@ -202,8 +202,8 @@ func generateEvents(count int) []mesh.Event {
 
 // generateTopicEvents generates a number of events for tests
 // based on topics.
-func generateTopicEvents(topics []string) []mesh.Event {
-	evts := []mesh.Event{}
+func generateTopicEvents(topics []string) []*mesh.Event {
+	evts := []*mesh.Event{}
 	for _, topic := range topics {
 		evt, _ := mesh.NewEvent(topic)
 		evts = append(evts, evt)

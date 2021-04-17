@@ -23,7 +23,7 @@ import (
 // Receptor defines the interface to receive events.
 type Receptor interface {
 	// Pull reads an event out of the input stream.
-	Pull() <-chan Event
+	Pull() <-chan *Event
 }
 
 // Emitter defines the interface for emitting events to one
@@ -33,7 +33,7 @@ type Emitter interface {
 	Emit(topic string, payloads ...interface{}) error
 
 	// EmitEvent appends the given event to the output stream.
-	EmitEvent(evt Event) error
+	EmitEvent(evt *Event) error
 }
 
 //--------------------
@@ -42,18 +42,18 @@ type Emitter interface {
 
 // stream manages the flow of events between emitter and receiver.
 type stream struct {
-	eventc chan Event
+	eventc chan *Event
 }
 
 // newStream creates a stream instance.
 func newStream() *stream {
 	return &stream{
-		eventc: make(chan Event),
+		eventc: make(chan *Event),
 	}
 }
 
 // Pull reads an event out of the stream.
-func (str *stream) Pull() <-chan Event {
+func (str *stream) Pull() <-chan *Event {
 	return str.eventc
 }
 
@@ -70,7 +70,7 @@ func (str *stream) Emit(topic string, payloads ...interface{}) error {
 // append it to the buffer in case that it's full. The time will
 // increase. If waiting is longer than 5 seconds a timeout error will
 // be returned.
-func (str *stream) EmitEvent(evt Event) error {
+func (str *stream) EmitEvent(evt *Event) error {
 	total := 5 * time.Second
 	wait := 50 * time.Millisecond
 	waited := 0 * time.Millisecond

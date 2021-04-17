@@ -32,22 +32,15 @@ type Event struct {
 	payload   json.RawMessage
 }
 
-// nilEvent is returned in case of errors.
-var nilEvent = Event{topic: TopicNil}
-
-// IsNilEvent checks if an event is the nil event.
-func IsNilEvent(evt Event) bool {
-	return evt.topic == TopicNil
-}
-
 // NewEvent creates a new Event based on a topic. The payloads are optional.
-func NewEvent(topic string, payloads ...interface{}) (Event, error) {
-	evt := nilEvent
+func NewEvent(topic string, payloads ...interface{}) (*Event, error) {
 	if topic == "" {
-		return evt, fmt.Errorf("event needs topic")
+		return nil, fmt.Errorf("event needs topic")
 	}
-	evt.timestamp = time.Now().UTC()
-	evt.topic = topic
+	evt := &Event{
+		timestamp: time.Now().UTC(),
+		topic:     topic,
+	}
 	// Check if the only value is a payload.
 	switch len(payloads) {
 	case 0:

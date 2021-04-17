@@ -36,7 +36,7 @@ func TestComboBehavior(t *testing.T) {
 		// Matcher tries to find the wanted topic twice. When found twice
 		// the distance will be returned.
 		var found []int
-		if err := r.Do(func(i int, evt mesh.Event) error {
+		if err := r.Do(func(i int, evt *mesh.Event) error {
 			if evt.Topic() == wanted {
 				found = append(found, i)
 			}
@@ -56,7 +56,7 @@ func TestComboBehavior(t *testing.T) {
 		return behaviors.CriterionDropFirst, nil, nil
 	}
 	behavior := behaviors.NewComboBehavior(matcher)
-	eval := func(evt mesh.Event) (bool, error) {
+	eval := func(evt *mesh.Event) (bool, error) {
 		switch evt.Topic() {
 		case behaviors.TopicCriterionDone:
 			var distance int

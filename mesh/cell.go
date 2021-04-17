@@ -140,7 +140,7 @@ func (c *cell) receive(topic string, payload ...interface{}) error {
 }
 
 // receiveEvent passes an event to handle to the cell.
-func (c *cell) receiveEvent(evt Event) error {
+func (c *cell) receiveEvent(evt *Event) error {
 	if !c.active.Load().(bool) {
 		return errors.New("cell deactivated")
 	}
@@ -159,7 +159,7 @@ func (c *cell) shutdown() {
 }
 
 // Pull implements Receptor.
-func (c *cell) Pull() <-chan Event {
+func (c *cell) Pull() <-chan *Event {
 	return c.in.Pull()
 }
 
@@ -173,7 +173,7 @@ func (c *cell) Emit(topic string, payloads ...interface{}) error {
 }
 
 // EmitEvent implements Emitter.
-func (c *cell) EmitEvent(evt Event) error {
+func (c *cell) EmitEvent(evt *Event) error {
 	evt.appendEmitter(c.name)
 	return c.output.do(func(oc *cell) error {
 		if err := oc.receiveEvent(evt); err != nil {

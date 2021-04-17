@@ -20,7 +20,7 @@ import (
 //--------------------
 
 // CollectionProcessorFunc is used to process collected events.
-type CollectionProcessorFunc func(r mesh.EventSinkReader) (mesh.Event, error)
+type CollectionProcessorFunc func(r mesh.EventSinkReader) (*mesh.Event, error)
 
 // collectorBehavior collects events for processing on demand.
 type collectorBehavior struct {

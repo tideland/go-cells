@@ -30,7 +30,7 @@ func TestEventSimple(t *testing.T) {
 
 	evt, err := mesh.NewEvent("")
 	assert.ErrorContains(err, "event needs topic")
-	assert.True(mesh.IsNilEvent(evt))
+	assert.Nil(evt)
 
 	evt, err = mesh.NewEvent("test")
 	assert.NoError(err)
@@ -73,7 +73,8 @@ func TestEventMarshaling(t *testing.T) {
 	data, err := json.Marshal(evtIn)
 	assert.NoError(err)
 
-	evtOut := mesh.Event{}
+	evtOut, err := mesh.NewEvent("emppty")
+	assert.NoError(err)
 	err = json.Unmarshal(data, &evtOut)
 	assert.NoError(err)
 	assert.Equal(evtOut, evtIn)
@@ -90,11 +91,12 @@ func TestEventMarshaling(t *testing.T) {
 	data, err = json.Marshal(evtIn)
 	assert.NoError(err)
 
-	evtOut = mesh.Event{}
+	evtOut, err = mesh.NewEvent("emppty")
+	assert.NoError(err)
 	err = json.Unmarshal(data, &evtOut)
 	assert.NoError(err)
 	assert.Equal(evtOut, evtIn)
-	pl := []mesh.Event{}
+	pl := []*mesh.Event{}
 	err = evtOut.Payload(&pl)
 	assert.NoError(err)
 	assert.Equal(pl[0], plEvtA)

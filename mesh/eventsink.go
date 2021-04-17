@@ -20,7 +20,7 @@ import (
 //--------------------
 
 // EventSinkDoFunc is used when looking over the collected events.
-type EventSinkDoFunc func(i int, evt Event) error
+type EventSinkDoFunc func(i int, evt *Event) error
 
 // EventSinkReader can be used to read the events in a sink. It is a
 // specialized subfunctionality of the event sink.
@@ -29,14 +29,14 @@ type EventSinkReader interface {
 	Len() int
 
 	// PeekFirst returns the first of the collected events.
-	First() (Event, bool)
+	First() (*Event, bool)
 
 	// PeekLast returns the last of the collected event datas.
-	Last() (Event, bool)
+	Last() (*Event, bool)
 
 	// PeekAt returns an event at a given index and true if it
 	// exists, otherwise nil and false.
-	Peek(index int) (Event, bool)
+	Peek(index int) (*Event, bool)
 
 	// Do iterates over all collected events.
 	Do(do EventSinkDoFunc) error
@@ -50,11 +50,11 @@ type EventSinkReader interface {
 // be used in behaviors for collecting sets of events and operate on them.
 type EventSink struct {
 	max    int
-	events []Event
+	events []*Event
 }
 
 // NewEventSink creates a sink for events.
-func NewEventSink(max int, evts ...Event) *EventSink {
+func NewEventSink(max int, evts ...*Event) *EventSink {
 	s := &EventSink{
 		max: max,
 	}
@@ -67,7 +67,7 @@ func NewEventSink(max int, evts ...Event) *EventSink {
 }
 
 // Push adds an event to the end of the sink.
-func (s *EventSink) Push(evt Event) int {
+func (s *EventSink) Push(evt *Event) int {
 	s.events = append(s.events, evt)
 	if s.max > 0 && len(s.events) > s.max {
 		s.events = s.events[1:]
@@ -77,9 +77,9 @@ func (s *EventSink) Push(evt Event) int {
 
 // Pop retrieves and removes the last event from the sink
 // and also returns the new length.
-func (s *EventSink) Pop() (Event, int) {
+func (s *EventSink) Pop() (*Event, int) {
 	if len(s.events) == 0 {
-		return nilEvent, 0
+		return nil, 0
 	}
 	l := len(s.events) - 1
 	evt := s.events[l]
@@ -88,8 +88,8 @@ func (s *EventSink) Pop() (Event, int) {
 }
 
 // Unshift adds an event to the begin of the sink.
-func (s *EventSink) Unshift(evt Event) int {
-	s.events = append([]Event{evt}, s.events...)
+func (s *EventSink) Unshift(evt *Event) int {
+	s.events = append([]*Event{evt}, s.events...)
 	if s.max > 0 && len(s.events) > s.max {
 		s.events = s.events[:len(s.events)-1]
 	}
@@ -98,9 +98,9 @@ func (s *EventSink) Unshift(evt Event) int {
 
 // Shift returns and removes the first event of the sink
 // and also returns the new length.
-func (s *EventSink) Shift() (Event, int) {
+func (s *EventSink) Shift() (*Event, int) {
 	if len(s.events) == 0 {
-		return nilEvent, 0
+		return nil, 0
 	}
 	l := len(s.events) - 1
 	evt := s.events[0]
@@ -110,27 +110,27 @@ func (s *EventSink) Shift() (Event, int) {
 
 // First allows a look at the first event of the sink if it
 // exists. Otherwise nil and false will be returned.
-func (s *EventSink) First() (Event, bool) {
+func (s *EventSink) First() (*Event, bool) {
 	if len(s.events) < 1 {
-		return nilEvent, false
+		return nil, false
 	}
 	return s.events[0], true
 }
 
 // Last allows a look at the last event of the sink if it
 // exists. Otherwise nil and false will be returned.
-func (s *EventSink) Last() (Event, bool) {
+func (s *EventSink) Last() (*Event, bool) {
 	if len(s.events) < 1 {
-		return nilEvent, false
+		return nil, false
 	}
 	return s.events[len(s.events)-1], true
 }
 
 // Peek allows a look at the indexed event of the sink if it
 // exists. Otherwise nil and false will be returned.
-func (s *EventSink) Peek(index int) (Event, bool) {
+func (s *EventSink) Peek(index int) (*Event, bool) {
 	if index < 0 || index > len(s.events)-1 {
-		return nilEvent, false
+		return nil, false
 	}
 	return s.events[index], true
 }
@@ -161,12 +161,12 @@ func (s *EventSink) Do(do EventSinkDoFunc) error {
 //--------------------
 
 // EventSinkFilterFunc defines functions returning true for matching events.
-type EventSinkFilterFunc func(i int, evt Event) (bool, error)
+type EventSinkFilterFunc func(i int, evt *Event) (bool, error)
 
 // EventSinkFilter allows to retrieve a subset of events by running a filter function.
-func EventSinkFilter(r EventSinkReader, filter EventSinkFilterFunc) ([]Event, error) {
-	var evts []Event
-	if derr := r.Do(func(i int, evt Event) error {
+func EventSinkFilter(r EventSinkReader, filter EventSinkFilterFunc) ([]*Event, error) {
+	var evts []*Event
+	if derr := r.Do(func(i int, evt *Event) error {
 		ok, err := filter(i, evt)
 		if err != nil {
 			return err
@@ -184,7 +184,7 @@ func EventSinkFilter(r EventSinkReader, filter EventSinkFilterFunc) ([]Event, er
 // EventSinkMatch checks if all events match a passed filer.
 func EventSinkMatch(r EventSinkReader, filter EventSinkFilterFunc) (bool, error) {
 	matches := true
-	if derr := r.Do(func(i int, evt Event) error {
+	if derr := r.Do(func(i int, evt *Event) error {
 		ok, err := filter(i, evt)
 		if err != nil {
 			return err
@@ -198,12 +198,12 @@ func EventSinkMatch(r EventSinkReader, filter EventSinkFilterFunc) (bool, error)
 }
 
 // EventSinkFoldFunc defines functions for folding accelarator and event into a new event.
-type EventSinkFoldFunc func(i int, acc, evt Event) (Event, error)
+type EventSinkFoldFunc func(i int, acc, evt *Event) (*Event, error)
 
 // EventSinkFold reduces (folds) the events of the sink to one.
-func EventSinkFold(r EventSinkReader, inject Event, fold EventSinkFoldFunc) (Event, error) {
-	var acc Event = inject
-	if derr := r.Do(func(i int, evt Event) error {
+func EventSinkFold(r EventSinkReader, inject *Event, fold EventSinkFoldFunc) (*Event, error) {
+	var acc *Event = inject
+	if derr := r.Do(func(i int, evt *Event) error {
 		facc, err := fold(i, acc, evt)
 		if err != nil {
 			return err
@@ -211,7 +211,7 @@ func EventSinkFold(r EventSinkReader, inject Event, fold EventSinkFoldFunc) (Eve
 		acc = facc
 		return nil
 	}); derr != nil {
-		return nilEvent, derr
+		return nil, derr
 	}
 	return acc, nil
 }

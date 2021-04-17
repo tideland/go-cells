@@ -29,7 +29,7 @@ import (
 func TestBroadcasterBehavior(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	behavior := behaviors.NewBroadcasterBehavior()
-	eval := func(evt mesh.Event) (bool, error) {
+	eval := func(evt *mesh.Event) (bool, error) {
 		assert.Contains(evt.Topic(), []string{"one", "two", "three", "done", "testbed-terminated"})
 		if evt.Topic() == "done" {
 			return true, nil

@@ -30,12 +30,12 @@ import (
 func TestCollectorBehavior(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	generator := generators.New(generators.FixedRand())
-	processor := func(r mesh.EventSinkReader) (mesh.Event, error) {
+	processor := func(r mesh.EventSinkReader) (*mesh.Event, error) {
 		l := r.Len()
 		return mesh.NewEvent("length", l)
 	}
 	behavior := behaviors.NewCollectorBehavior(10, processor)
-	eval := func(evt mesh.Event) (bool, error) {
+	eval := func(evt *mesh.Event) (bool, error) {
 		switch evt.Topic() {
 		case "length":
 			var l int
