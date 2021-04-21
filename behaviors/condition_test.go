@@ -26,7 +26,8 @@ import (
 // TESTS
 //--------------------
 
-// TestConditionBehavior tests the condition behavior.
+// TestConditionBehavior tests events for a criterium and processes
+// matching ones.
 func TestConditionBehavior(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	generator := generators.New(generators.FixedRand())
