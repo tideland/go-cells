@@ -35,6 +35,7 @@ func TestCollectorBehavior(t *testing.T) {
 		return mesh.NewEvent("length", l)
 	}
 	behavior := behaviors.NewCollectorBehavior(10, processor)
+	// Test evaluation.
 	eval := func(evt *mesh.Event) (bool, error) {
 		switch evt.Topic() {
 		case "length":
@@ -48,6 +49,7 @@ func TestCollectorBehavior(t *testing.T) {
 		}
 		return false, nil
 	}
+	// Run tests.
 	tb := mesh.NewTestbed(behavior, eval)
 	err := tb.Go(func(out mesh.Emitter) {
 		for _, topic := range generator.Words(25) {

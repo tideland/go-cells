@@ -39,6 +39,7 @@ func TestCallbackBehavior(t *testing.T) {
 		return out.Emit("b")
 	}
 	behavior := behaviors.NewCallbackBehavior(callbackA, callbackB)
+	// Test evaluation.
 	eval := func(evt *mesh.Event) (bool, error) {
 		switch evt.Topic() {
 		case "a":
@@ -49,6 +50,7 @@ func TestCallbackBehavior(t *testing.T) {
 		return countA == countB && countA == count, nil
 	}
 	tb := mesh.NewTestbed(behavior, eval)
+	// Run tests.
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < count; i++ {
 			topic := strconv.Itoa(i)

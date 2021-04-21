@@ -40,6 +40,7 @@ func TestConditionBehavior(t *testing.T) {
 		return out.Emit(topic)
 	}
 	behavior := behaviors.NewConditionBehavior(tester, processor)
+	// Test evaluation.
 	eval := func(evt *mesh.Event) (bool, error) {
 		return evt.Topic() == "found-now", nil
 	}

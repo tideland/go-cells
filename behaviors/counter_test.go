@@ -12,11 +12,14 @@ package behaviors_test // import "tideland.dev/go/cells/behaviors"
 //--------------------
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"tideland.dev/go/audit/asserts"
 	"tideland.dev/go/audit/generators"
 
+	"tideland.dev/go/cells/behaviors"
 	"tideland.dev/go/cells/mesh"
 )
 
@@ -29,10 +32,37 @@ import (
 func TestCounterBehavior(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	generator := generators.New(generators.FixedRand())
-	words := []string{"alpha", "beta", "", "d", "e"}
-	eval := func(evt *mesh.Event) ([]string, error) {
-
+	topics := []string{"alpha", "bravo", "charly", "delta", "echo"}
+	counteval := func(evt *mesh.Event) ([]string, error) {
+		var incrs []string
+		for _, r := range evt.Topic() {
+			reg := fmt.Sprintf("reg-%v", r)
+			incrs = append(incrs, reg)
+		}
+		return incrs, nil
 	}
+	behavior := behaviors.NewCounterBehavior(counteval)
+	// Test evaluation.
+	eval := func(evt *mesh.Event) (bool, error) {
+		switch evt.Topic() {
+		case behaviors.TopicCounterValues:
+			// Check values.
+		}
+		return evt.Topic() == "found-now", nil
+	}
+	// Run test.
+	tb := mesh.NewTestbed(behavior, eval)
+	err := tb.Go(func(out mesh.Emitter) {
+		for i := 0; i < 50; i++ {
+			topic := generator.OneStringOf(topics...)
+			out.Emit(topic)
+		}
+		// Retrieve, erase, and retrieve again.
+		out.Emit(behaviors.TopicCounterStatus)
+		out.Emit(behaviors.TopicCounterReset)
+		out.Emit(behaviors.TopicCounterStatus)
+	}, time.Second)
+	assert.NoError(err)
 }
 
 // EOF
