@@ -46,9 +46,16 @@ func TestCounterBehavior(t *testing.T) {
 	eval := func(evt *mesh.Event) (bool, error) {
 		switch evt.Topic() {
 		case behaviors.TopicCounterValues:
-			// Check values.
+			var values map[string]int
+			err := evt.Payload(&values)
+			if err != nil {
+				return false, err
+			}
+			l := len(values)
+			return l == 13 || l == 0, nil
+		default:
+			return false, nil
 		}
-		return evt.Topic() == "found-now", nil
 	}
 	// Run test.
 	tb := mesh.NewTestbed(behavior, eval)
