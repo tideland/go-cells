@@ -36,6 +36,7 @@ func TestAggregatorBehavior(t *testing.T) {
 		return words, nil
 	}
 	behavior := behaviors.NewAggregatorBehavior(map[string]bool{}, aggregator)
+	// Test evaluation.
 	eval := func(evt *mesh.Event) (bool, error) {
 		switch evt.Topic() {
 		case behaviors.TopicResetted:
@@ -48,6 +49,7 @@ func TestAggregatorBehavior(t *testing.T) {
 		}
 		return false, nil
 	}
+	// Run tests.
 	tb := mesh.NewTestbed(behavior, eval)
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < count; i++ {

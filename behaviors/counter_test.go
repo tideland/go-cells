@@ -12,6 +12,7 @@ package behaviors_test // import "tideland.dev/go/cells/behaviors"
 //--------------------
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -26,23 +27,35 @@ import (
 // TESTS
 //--------------------
 
-// TestConditionBehavior tests events for a criterium and processes
-// matching ones.
-func TestConditionBehavior(t *testing.T) {
+// TestCounterBehavior tests counting and reacting via the
+// countung behavior.
+func TestCounterBehavior(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	generator := generators.New(generators.FixedRand())
-	topics := []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "now"}
-	tester := func(evt *mesh.Event) bool {
-		return evt.Topic() == "now"
+	topics := []string{"alpha", "bravo", "charly", "delta", "echo"}
+	counteval := func(evt *mesh.Event) ([]string, error) {
+		var incrs []string
+		for _, r := range evt.Topic() {
+			reg := fmt.Sprintf("reg-%v", r)
+			incrs = append(incrs, reg)
+		}
+		return incrs, nil
 	}
-	processor := func(cell mesh.Cell, evt *mesh.Event, out mesh.Emitter) error {
-		topic := "found-" + evt.Topic()
-		return out.Emit(topic)
-	}
-	behavior := behaviors.NewConditionBehavior(tester, processor)
+	behavior := behaviors.NewCounterBehavior(counteval)
 	// Test evaluation.
 	eval := func(evt *mesh.Event) (bool, error) {
-		return evt.Topic() == "found-now", nil
+		switch evt.Topic() {
+		case behaviors.TopicCounterValues:
+			var values map[string]int
+			err := evt.Payload(&values)
+			if err != nil {
+				return false, err
+			}
+			l := len(values)
+			return l == 13 || l == 0, nil
+		default:
+			return false, nil
+		}
 	}
 	// Run test.
 	tb := mesh.NewTestbed(behavior, eval)
@@ -51,6 +64,10 @@ func TestConditionBehavior(t *testing.T) {
 			topic := generator.OneStringOf(topics...)
 			out.Emit(topic)
 		}
+		// Retrieve, erase, and retrieve again.
+		out.Emit(behaviors.TopicCounterStatus)
+		out.Emit(behaviors.TopicCounterReset)
+		out.Emit(behaviors.TopicCounterStatus)
 	}, time.Second)
 	assert.NoError(err)
 }

@@ -56,6 +56,7 @@ func TestComboBehavior(t *testing.T) {
 		return behaviors.CriterionDropFirst, nil, nil
 	}
 	behavior := behaviors.NewComboBehavior(matcher)
+	// Test evaluation.
 	eval := func(evt *mesh.Event) (bool, error) {
 		switch evt.Topic() {
 		case behaviors.TopicCriterionDone:
