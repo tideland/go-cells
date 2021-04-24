@@ -39,14 +39,13 @@ func TestTestbed(t *testing.T) {
 		}
 	}
 	behavior := mesh.BehaviorFunc(forwarder)
-	count := 0
-	eval := func(evt *mesh.Event) (bool, error) {
-		count++
-		if count == 3 {
+	eval := func(tbctx *mesh.TestbedContext, evt *mesh.Event) error {
+		tbctx.EventSink().Push(evt)
+		if tbctx.EventSink().Len() == 3 {
 			// Done.
-			return true, nil
+			tbctx.SetSuccess()
 		}
-		return false, nil
+		return nil
 	}
 
 	tb := mesh.NewTestbed(behavior, eval)
@@ -97,10 +96,12 @@ func TestTestbedMesh(t *testing.T) {
 		}
 	}
 	behavior := mesh.BehaviorFunc(mesher)
-	topics := map[string]bool{}
-	eval := func(evt *mesh.Event) (bool, error) {
-		topics[evt.Topic()] = true
-		return len(topics) == 6, nil
+	eval := func(tbctx *mesh.TestbedContext, evt *mesh.Event) error {
+		tbctx.EventSink().Push(evt)
+		if tbctx.EventSink().Len() == 6 {
+			tbctx.SetSuccess()
+		}
+		return nil
 	}
 
 	tb := mesh.NewTestbed(behavior, eval)
@@ -137,14 +138,15 @@ func TestTestbedError(t *testing.T) {
 		}
 	}
 	behavior := mesh.BehaviorFunc(failer)
-	eval := func(evt *mesh.Event) (bool, error) {
+	eval := func(tbctx *mesh.TestbedContext, evt *mesh.Event) error {
 		switch evt.Topic() {
 		case "done":
-			return true, nil
+			tbctx.SetSuccess()
+			return nil
 		case "fail":
-			return false, errors.New("failure")
+			return errors.New("failure")
 		default:
-			return false, nil
+			return nil
 		}
 	}
 

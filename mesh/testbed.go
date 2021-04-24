@@ -15,22 +15,79 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 )
 
 //--------------------
-// TESTBED FUNCTIONS
+// TESTBED EVALUATOR
+//--------------------
+
+// TestbedContext allows to store events received with the testbed
+// evaluator. It's for tests where multiple events are needed
+// for a positive evaluation.
+//
+// A success can be signaled with SetSuccess(), a failing with
+// SetFail(string).
+type TestbedContext struct {
+	mu      sync.Mutex
+	sink    *EventSink
+	done    bool
+	success bool
+	reason  string
+}
+
+// newTestbedContext returns an initialized testbed context.
+func newTestbedContext() *TestbedContext {
+	return &TestbedContext{
+		sink:    NewEventSink(0),
+		done:    false,
+		success: false,
+		reason:  "",
+	}
+}
+
+// EventSink returns the event sink of the context.
+func (tbctx *TestbedContext) EventSink() *EventSink {
+	return tbctx.sink
+}
+
+// SetSuccess signals a successful testing.
+func (tbctx *TestbedContext) SetSuccess() {
+	tbctx.done = true
+	tbctx.success = true
+}
+
+// SetFail signals a failing testing together with a reason.
+func (tbctx *TestbedContext) SetFail(reason string) {
+	tbctx.done = true
+	tbctx.success = false
+	tbctx.reason = reason
+}
+
+// isDone returns true if the testing is done.
+func (tbctx *TestbedContext) isDone() bool {
+	return tbctx.done
+}
+
+// isDone returns true in case of a successful test, otherwise
+// false and the reason.
+func (tbctx *TestbedContext) isSuccesful() (bool, string) {
+	return tbctx.success, tbctx.reason
+}
+
+// TestbedEvaluator defines a function signature used for evaluating
+// the events emitted by the tested behavior. Success or failing can
+// be sugnalled via the given testbed context.
+type TestbedEvaluator func(tbctx *TestbedContext, evt *Event) error
+
+//--------------------
+// TESTBED RUNNER
 //--------------------
 
 // TestbedRunner contains the operations running in the background
 // and emitting all events used by the tested behaviors as input.
 type TestbedRunner func(out Emitter)
-
-// TestbedEvaluator allows to test the events emitted by the behaviors
-// in a Testbed. It has to return false as long as not all wanted events
-// have been returned and true once all expectations have been fullfilled.
-// Internal errors can be explicitely returned.
-type TestbedEvaluator func(evt *Event) (bool, error)
 
 //--------------------
 // TESTBED MESH
@@ -129,18 +186,17 @@ func (tbc *testbedCell) Emit(topic string, payloads ...interface{}) error {
 // EmitEvent implements mesh.Emitter and evaluates the event.
 func (tbc *testbedCell) EmitEvent(evt *Event) error {
 	evt.appendEmitter(tbc.Name())
-	ok, err := tbc.testbed.eval(evt)
-	switch {
-	case ok:
-		tbc.testbed.donec <- struct{}{}
-	case err != nil:
+	if err := tbc.testbed.eval(tbc.testbed.tbctx, evt); err != nil {
 		tbc.testbed.errc <- err
 		return err
+	}
+	if tbc.testbed.tbctx.isDone() {
+		tbc.testbed.donec <- struct{}{}
 	}
 	return nil
 }
 
-// push witers an event into the input channel.
+// push writers an event into the input channel.
 func (tbc *testbedCell) push(evt *Event) error {
 	select {
 	case <-tbc.ctx.Done():
@@ -211,13 +267,14 @@ func (tbe *testbedEmitter) EmitEvent(evt *Event) error {
 // Testbed.Wait() gets a signal. Otherwise a timeout will be returned to show
 // an internal error.
 type Testbed struct {
-	ctx    context.Context
-	cancel func()
-	eval   TestbedEvaluator
-	cell   *testbedCell
-	donec  chan struct{}
-	ranc   chan struct{}
-	errc   chan error
+	ctx      context.Context
+	tbctx    *TestbedContext
+	cancel   func()
+	eval     TestbedEvaluator
+	cell     *testbedCell
+	donec    chan struct{}
+	stoppedc chan struct{}
+	errc     chan error
 }
 
 // NewTestbed starts a test cell with the given behavior. The tester function
@@ -225,12 +282,13 @@ type Testbed struct {
 func NewTestbed(behavior Behavior, evaluator TestbedEvaluator) *Testbed {
 	ctx, cancel := context.WithCancel(context.Background())
 	tb := &Testbed{
-		ctx:    ctx,
-		cancel: cancel,
-		eval:   evaluator,
-		donec:  make(chan struct{}),
-		ranc:   make(chan struct{}),
-		errc:   make(chan error),
+		ctx:      ctx,
+		tbctx:    newTestbedContext(),
+		cancel:   cancel,
+		eval:     evaluator,
+		donec:    make(chan struct{}),
+		stoppedc: make(chan struct{}),
+		errc:     make(chan error),
 	}
 	tb.cell = newTestbedCell(ctx, tb, behavior)
 	return tb
@@ -245,29 +303,34 @@ func (tb *Testbed) Go(runner TestbedRunner, timeout time.Duration) error {
 // run runs the testbed runner.
 func (tb *Testbed) run(runner TestbedRunner) {
 	runner(newTestbedEmitter(tb))
-	tb.ranc <- struct{}{}
+	tb.stoppedc <- struct{}{}
 }
 
 // wait waits until a test end or error has been signalled or a
 // timeout happened.
 func (tb *Testbed) wait(timeout time.Duration) error {
 	defer tb.cancel()
+	running := true
+	waiting := true
 	now := time.Now()
-	done := 0
-	for done < 2 {
+	for running || waiting {
 		select {
-		case <-tb.ranc:
-			done++
+		case <-tb.stoppedc:
+			running = false
 		case <-tb.donec:
-			done++
+			waiting = false
 		case err := <-tb.errc:
 			return err
 		case to := <-time.After(timeout):
 			waited := to.Sub(now)
-			return errors.New("timeout after " + waited.String())
+			return errors.New("test failed: timeout after " + waited.String())
 		}
 	}
 	// The async testbed runner and the tests are done.
+	success, reason := tb.tbctx.isSuccesful()
+	if !success {
+		return errors.New("test failed: " + reason)
+	}
 	return nil
 }
 
