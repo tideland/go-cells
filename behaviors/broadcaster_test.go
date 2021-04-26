@@ -12,6 +12,7 @@ package behaviors_test // import "tideland.dev/go/cells/behaviors"
 //--------------------
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -29,13 +30,23 @@ import (
 func TestBroadcasterBehavior(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	behavior := behaviors.NewBroadcasterBehavior()
+	values := map[string]bool{
+		"one":                true,
+		"two":                true,
+		"three":              true,
+		"done":               true,
+		"testbed-terminated": true,
+	}
 	// Test evaluation.
-	eval := func(evt *mesh.Event) (bool, error) {
-		assert.Contains(evt.Topic(), []string{"one", "two", "three", "done", "testbed-terminated"})
-		if evt.Topic() == "done" {
-			return true, nil
+	eval := func(tbctx *mesh.TestbedContext, evt *mesh.Event) error {
+		knowsValue := values[evt.Topic()]
+		if !knowsValue {
+			return fmt.Errorf("unknown topic: %s", evt.Topic())
 		}
-		return false, nil
+		if evt.Topic() == "done" {
+			tbctx.SetSuccess()
+		}
+		return nil
 	}
 	// Run tests.
 	tb := mesh.NewTestbed(behavior, eval)

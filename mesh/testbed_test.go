@@ -25,8 +25,9 @@ import (
 // TESTS
 //--------------------
 
-// TestTestbed verifies the working of the testbed for behavior tests.
-func TestTestbed(t *testing.T) {
+// TestTestbedSuccess verifies the successful working of the testbed
+// for behavior tests.
+func TestTestbedSuccess(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	forwarder := func(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
 		for {
@@ -39,6 +40,7 @@ func TestTestbed(t *testing.T) {
 		}
 	}
 	behavior := mesh.BehaviorFunc(forwarder)
+	// Test evaluation.
 	eval := func(tbctx *mesh.TestbedContext, evt *mesh.Event) error {
 		tbctx.EventSink().Push(evt)
 		if tbctx.EventSink().Len() == 3 {
@@ -47,7 +49,7 @@ func TestTestbed(t *testing.T) {
 		}
 		return nil
 	}
-
+	// Run tests.
 	tb := mesh.NewTestbed(behavior, eval)
 	err := tb.Go(func(out mesh.Emitter) {
 		out.Emit("one")
@@ -55,7 +57,39 @@ func TestTestbed(t *testing.T) {
 		out.Emit("three")
 	}, time.Second)
 	assert.NoError(err)
-	// assert.Equal(count, 3)
+}
+
+// TestTestbedFail verifies the failing working of the testbed
+// for behavior tests.
+func TestTestbedFail(t *testing.T) {
+	assert := asserts.NewTesting(t, asserts.FailStop)
+	forwarder := func(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
+		for {
+			select {
+			case <-cell.Context().Done():
+				return nil
+			case evt := <-in.Pull():
+				out.EmitEvent(evt)
+			}
+		}
+	}
+	behavior := mesh.BehaviorFunc(forwarder)
+	// Test evaluation.
+	eval := func(tbctx *mesh.TestbedContext, evt *mesh.Event) error {
+		if evt.Topic() == "fail" {
+			tbctx.SetFail("received failure event")
+		}
+		return nil
+	}
+	// Run tests.
+	tb := mesh.NewTestbed(behavior, eval)
+	err := tb.Go(func(out mesh.Emitter) {
+		out.Emit("one")
+		out.Emit("two")
+		out.Emit("three")
+		out.Emit("fail")
+	}, time.Second)
+	assert.ErrorContains(err, "test failed: received failure event")
 }
 
 // TestTestbedMesh verifies the Mesh stubbing of the testbed.
@@ -96,6 +130,7 @@ func TestTestbedMesh(t *testing.T) {
 		}
 	}
 	behavior := mesh.BehaviorFunc(mesher)
+	// Test evaluation.
 	eval := func(tbctx *mesh.TestbedContext, evt *mesh.Event) error {
 		tbctx.EventSink().Push(evt)
 		if tbctx.EventSink().Len() == 6 {
@@ -103,7 +138,7 @@ func TestTestbedMesh(t *testing.T) {
 		}
 		return nil
 	}
-
+	// Run tests.
 	tb := mesh.NewTestbed(behavior, eval)
 	err := tb.Go(func(out mesh.Emitter) {
 		out.Emit("go")
@@ -138,18 +173,19 @@ func TestTestbedError(t *testing.T) {
 		}
 	}
 	behavior := mesh.BehaviorFunc(failer)
+	// Test evaluation.
 	eval := func(tbctx *mesh.TestbedContext, evt *mesh.Event) error {
 		switch evt.Topic() {
 		case "done":
 			tbctx.SetSuccess()
 			return nil
 		case "fail":
-			return errors.New("failure")
+			return errors.New("ouch")
 		default:
 			return nil
 		}
 	}
-
+	// Run tests.
 	tb := mesh.NewTestbed(behavior, eval)
 	err := tb.Go(func(out mesh.Emitter) {
 		out.Emit("go")
@@ -160,7 +196,7 @@ func TestTestbedError(t *testing.T) {
 		out.Emit("go")
 		out.Emit("done")
 	}, time.Second)
-	assert.ErrorContains(err, "failure")
+	assert.ErrorContains(err, "test error: ouch")
 }
 
 // EOF
