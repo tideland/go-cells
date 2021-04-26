@@ -37,17 +37,32 @@ func TestAggregatorBehavior(t *testing.T) {
 	}
 	behavior := behaviors.NewAggregatorBehavior(map[string]bool{}, aggregator)
 	// Test evaluation.
-	eval := func(evt *mesh.Event) (bool, error) {
-		switch evt.Topic() {
-		case behaviors.TopicResetted:
-			return true, nil
-		case behaviors.TopicAggregated:
+	eval := func(tbctx *mesh.TestbedContext, evt *mesh.Event) error {
+		tbctx.EventSink().Push(evt)
+		if tbctx.EventSink().Len() == 2 {
+			// Check first for aggregated.
+			evtA, _ := tbctx.EventSink().First()
+			if evtA.Topic() != behaviors.TopicAggregated {
+				tbctx.SetFail("topic not 'aggregated': %s", evtA.Topic())
+				return nil
+			}
 			var words map[string]bool
-			err := evt.Payload(&words)
-			assert.NoError(err)
-			assert.Length(words, count)
+			if err := evtA.Payload(&words); err != nil {
+				return err
+			}
+			if len(words) != count {
+				tbctx.SetFail("invalid length of words: %d", len(words))
+				return nil
+			}
+			// Check second for resetted.
+			evtB, _ := tbctx.EventSink().First()
+			if evtB.Topic() != behaviors.TopicResetted {
+				tbctx.SetFail("topic not 'resetted': %s", evtB.Topic())
+				return nil
+			}
+			tbctx.SetSuccess()
 		}
-		return false, nil
+		return nil
 	}
 	// Run tests.
 	tb := mesh.NewTestbed(behavior, eval)

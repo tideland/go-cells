@@ -28,7 +28,7 @@ import (
 // for a positive evaluation.
 //
 // A success can be signaled with SetSuccess(), a failing with
-// SetFail(string).
+// SetFail(string, vs ...interface{}).
 type TestbedContext struct {
 	mu      sync.Mutex
 	sink    *EventSink
@@ -59,10 +59,10 @@ func (tbctx *TestbedContext) SetSuccess() {
 }
 
 // SetFail signals a failing testing together with a reason.
-func (tbctx *TestbedContext) SetFail(reason string) {
+func (tbctx *TestbedContext) SetFail(reason string, vs ...interface{}) {
 	tbctx.done = true
 	tbctx.success = false
-	tbctx.reason = reason
+	tbctx.reason = fmt.Sprintf(reason, vs...)
 }
 
 // isDone returns true if the testing is done.
@@ -320,7 +320,7 @@ func (tb *Testbed) wait(timeout time.Duration) error {
 		case <-tb.donec:
 			waiting = false
 		case err := <-tb.errc:
-			return err
+			return fmt.Errorf("test error: %v", err)
 		case to := <-time.After(timeout):
 			waited := to.Sub(now)
 			return errors.New("test failed: timeout after " + waited.String())
