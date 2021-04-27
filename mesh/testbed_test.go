@@ -41,11 +41,11 @@ func TestTestbedSuccess(t *testing.T) {
 	}
 	behavior := mesh.BehaviorFunc(forwarder)
 	// Test evaluation.
-	eval := func(tbctx *mesh.TestbedContext, evt *mesh.Event) error {
-		tbctx.EventSink().Push(evt)
-		if tbctx.EventSink().Len() == 3 {
+	eval := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
+		tbe.Push(evt)
+		if tbe.Len() == 3 {
 			// Done.
-			tbctx.SetSuccess()
+			tbe.SetSuccess()
 		}
 		return nil
 	}
@@ -75,9 +75,9 @@ func TestTestbedFail(t *testing.T) {
 	}
 	behavior := mesh.BehaviorFunc(forwarder)
 	// Test evaluation.
-	eval := func(tbctx *mesh.TestbedContext, evt *mesh.Event) error {
+	eval := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		if evt.Topic() == "fail" {
-			tbctx.SetFail("received failure event")
+			tbe.SetFail("received failure event")
 		}
 		return nil
 	}
@@ -131,10 +131,10 @@ func TestTestbedMesh(t *testing.T) {
 	}
 	behavior := mesh.BehaviorFunc(mesher)
 	// Test evaluation.
-	eval := func(tbctx *mesh.TestbedContext, evt *mesh.Event) error {
-		tbctx.EventSink().Push(evt)
-		if tbctx.EventSink().Len() == 6 {
-			tbctx.SetSuccess()
+	eval := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
+		tbe.Push(evt)
+		if tbe.Len() == 6 {
+			tbe.SetSuccess()
 		}
 		return nil
 	}
@@ -174,10 +174,10 @@ func TestTestbedError(t *testing.T) {
 	}
 	behavior := mesh.BehaviorFunc(failer)
 	// Test evaluation.
-	eval := func(tbctx *mesh.TestbedContext, evt *mesh.Event) error {
+	eval := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		switch evt.Topic() {
 		case "done":
-			tbctx.SetSuccess()
+			tbe.SetSuccess()
 			return nil
 		case "fail":
 			return errors.New("ouch")

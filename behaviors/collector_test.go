@@ -36,18 +36,19 @@ func TestCollectorBehavior(t *testing.T) {
 	}
 	behavior := behaviors.NewCollectorBehavior(10, processor)
 	// Test evaluation.
-	eval := func(evt *mesh.Event) (bool, error) {
+	eval := func(tbctx *mesh.TestbedContext, evt *mesh.Event) error {
+		tbctx.EventSink().Push(evt)
 		switch evt.Topic() {
 		case "length":
 			var l int
 			err := evt.Payload(&l)
 			assert.NoError(err)
 			assert.Equal(l, 10)
-			return false, nil
+			tbctx.SetSuccess()
 		case behaviors.TopicResetted:
-			return true, nil
+			return nil
 		}
-		return false, nil
+		return nil
 	}
 	// Run tests.
 	tb := mesh.NewTestbed(behavior, eval)

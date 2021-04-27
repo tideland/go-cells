@@ -16,25 +16,42 @@ import (
 )
 
 //--------------------
-// EVENT SINK READER
+// EVENT SINK INTERFACES
 //--------------------
 
 // EventSinkDoFunc is used when looking over the collected events.
 type EventSinkDoFunc func(i int, evt *Event) error
 
-// EventSinkReader can be used to read the events in a sink. It is a
-// specialized subfunctionality of the event sink.
+// EventSinkChanger can be used to write events into a sink or change
+// it by reading and deleting.
+type EventSinkChanger interface {
+	// Push adds an event to the end of the sink and returns the new size.
+	Push(evt *Event) int
+
+	// Pop retrieves and removes the last event from the sink
+	// and also returns the new length.
+	Pop() (*Event, int)
+
+	// Unshift adds an event to the begin of the sink and returns the new size.
+	Unshift(evt *Event) int
+
+	// Shift returns and removes the first event of the sink
+	// and also returns the new length.
+	Shift() (*Event, int)
+}
+
+// EventSinkReader can be used to read the events in a sink.
 type EventSinkReader interface {
 	// Len returns the number of stored events.
 	Len() int
 
-	// PeekFirst returns the first of the collected events.
+	// First returns the first of the collected events.
 	First() (*Event, bool)
 
-	// PeekLast returns the last of the collected event datas.
+	// Last returns the last of the collected event datas.
 	Last() (*Event, bool)
 
-	// PeekAt returns an event at a given index and true if it
+	// Peek returns an event at a given index and true if it
 	// exists, otherwise nil and false.
 	Peek(index int) (*Event, bool)
 
@@ -42,20 +59,28 @@ type EventSinkReader interface {
 	Do(do EventSinkDoFunc) error
 }
 
+// EventSink combines changer and reader. It stores a number of ordered events by
+// adding them at the end. To be used in behaviors for collecting sets of events
+// and operate on them.
+type EventSink interface {
+	EventSinkChanger
+	EventSinkReader
+}
+
 //--------------------
 // EVENT SINK
 //--------------------
 
-// EventSink stores a number of ordered events by adding them at the end. To
+// eventSink stores a number of ordered events by adding them at the end. To
 // be used in behaviors for collecting sets of events and operate on them.
-type EventSink struct {
+type eventSink struct {
 	max    int
 	events []*Event
 }
 
 // NewEventSink creates a sink for events.
-func NewEventSink(max int, evts ...*Event) *EventSink {
-	s := &EventSink{
+func NewEventSink(max int, evts ...*Event) EventSink {
+	s := &eventSink{
 		max: max,
 	}
 	if max > 0 && len(evts) > max {
@@ -66,8 +91,8 @@ func NewEventSink(max int, evts ...*Event) *EventSink {
 	return s
 }
 
-// Push adds an event to the end of the sink.
-func (s *EventSink) Push(evt *Event) int {
+// Push adds an event to the end of the sink and returns the new size.
+func (s *eventSink) Push(evt *Event) int {
 	s.events = append(s.events, evt)
 	if s.max > 0 && len(s.events) > s.max {
 		s.events = s.events[1:]
@@ -77,7 +102,7 @@ func (s *EventSink) Push(evt *Event) int {
 
 // Pop retrieves and removes the last event from the sink
 // and also returns the new length.
-func (s *EventSink) Pop() (*Event, int) {
+func (s *eventSink) Pop() (*Event, int) {
 	if len(s.events) == 0 {
 		return nil, 0
 	}
@@ -87,8 +112,8 @@ func (s *EventSink) Pop() (*Event, int) {
 	return evt, l
 }
 
-// Unshift adds an event to the begin of the sink.
-func (s *EventSink) Unshift(evt *Event) int {
+// Unshift adds an event to the begin of the sink and returns the new size.
+func (s *eventSink) Unshift(evt *Event) int {
 	s.events = append([]*Event{evt}, s.events...)
 	if s.max > 0 && len(s.events) > s.max {
 		s.events = s.events[:len(s.events)-1]
@@ -98,7 +123,7 @@ func (s *EventSink) Unshift(evt *Event) int {
 
 // Shift returns and removes the first event of the sink
 // and also returns the new length.
-func (s *EventSink) Shift() (*Event, int) {
+func (s *eventSink) Shift() (*Event, int) {
 	if len(s.events) == 0 {
 		return nil, 0
 	}
@@ -110,7 +135,7 @@ func (s *EventSink) Shift() (*Event, int) {
 
 // First allows a look at the first event of the sink if it
 // exists. Otherwise nil and false will be returned.
-func (s *EventSink) First() (*Event, bool) {
+func (s *eventSink) First() (*Event, bool) {
 	if len(s.events) < 1 {
 		return nil, false
 	}
@@ -119,7 +144,7 @@ func (s *EventSink) First() (*Event, bool) {
 
 // Last allows a look at the last event of the sink if it
 // exists. Otherwise nil and false will be returned.
-func (s *EventSink) Last() (*Event, bool) {
+func (s *eventSink) Last() (*Event, bool) {
 	if len(s.events) < 1 {
 		return nil, false
 	}
@@ -128,7 +153,7 @@ func (s *EventSink) Last() (*Event, bool) {
 
 // Peek allows a look at the indexed event of the sink if it
 // exists. Otherwise nil and false will be returned.
-func (s *EventSink) Peek(index int) (*Event, bool) {
+func (s *eventSink) Peek(index int) (*Event, bool) {
 	if index < 0 || index > len(s.events)-1 {
 		return nil, false
 	}
@@ -136,18 +161,18 @@ func (s *EventSink) Peek(index int) (*Event, bool) {
 }
 
 // Clear removes all collected events.
-func (s *EventSink) Clear() {
+func (s *eventSink) Clear() {
 	s.events = nil
 }
 
 // Len returns the number of events in the sink.
-func (s *EventSink) Len() int {
+func (s *eventSink) Len() int {
 	return len(s.events)
 }
 
 // Do allows to iterate over all events of the sink and perform a
 // function.
-func (s *EventSink) Do(do EventSinkDoFunc) error {
+func (s *eventSink) Do(do EventSinkDoFunc) error {
 	for i, evt := range s.events {
 		if err := do(i, evt); err != nil {
 			return err
