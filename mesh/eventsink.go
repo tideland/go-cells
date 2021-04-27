@@ -38,6 +38,9 @@ type EventSinkChanger interface {
 	// Shift returns and removes the first event of the sink
 	// and also returns the new length.
 	Shift() (*Event, int)
+
+	// Clear removes all collected events.
+	Clear()
 }
 
 // EventSinkReader can be used to read the events in a sink.

@@ -41,8 +41,11 @@ func TestConditionBehavior(t *testing.T) {
 	}
 	behavior := behaviors.NewConditionBehavior(tester, processor)
 	// Test evaluation.
-	eval := func(evt *mesh.Event) (bool, error) {
-		return evt.Topic() == "found-now", nil
+	eval := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
+		if evt.Topic() == "found-now" {
+			tbe.SetSuccess()
+		}
+		return nil
 	}
 	// Run test.
 	tb := mesh.NewTestbed(behavior, eval)

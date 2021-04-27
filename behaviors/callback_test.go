@@ -40,14 +40,17 @@ func TestCallbackBehavior(t *testing.T) {
 	}
 	behavior := behaviors.NewCallbackBehavior(callbackA, callbackB)
 	// Test evaluation.
-	eval := func(evt *mesh.Event) (bool, error) {
+	eval := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		switch evt.Topic() {
 		case "a":
 			countA++
 		case "b":
 			countB++
 		}
-		return countA == countB && countA == count, nil
+		if countA == countB && countA == count {
+			tbe.SetSuccess()
+		}
+		return nil
 	}
 	tb := mesh.NewTestbed(behavior, eval)
 	// Run tests.

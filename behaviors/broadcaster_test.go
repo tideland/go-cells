@@ -38,13 +38,13 @@ func TestBroadcasterBehavior(t *testing.T) {
 		"testbed-terminated": true,
 	}
 	// Test evaluation.
-	eval := func(tbctx *mesh.TestbedContext, evt *mesh.Event) error {
+	eval := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		knowsValue := values[evt.Topic()]
 		if !knowsValue {
 			return fmt.Errorf("unknown topic: %s", evt.Topic())
 		}
 		if evt.Topic() == "done" {
-			tbctx.SetSuccess()
+			tbe.SetSuccess()
 		}
 		return nil
 	}
