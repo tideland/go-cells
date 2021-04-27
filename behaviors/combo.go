@@ -33,7 +33,7 @@ type ComboCriterionFunc func(r mesh.EventSinkReader) (CriterionMatch, interface{
 // comboBehavior implements the combo behavior.
 type comboBehavior struct {
 	matches ComboCriterionFunc
-	sink    *mesh.EventSink
+	sink    mesh.EventSink
 }
 
 // NewComboBehavior creates a behavior checking an event stream for a

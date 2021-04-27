@@ -25,7 +25,7 @@ type CollectionProcessorFunc func(r mesh.EventSinkReader) (*mesh.Event, error)
 // collectorBehavior collects events for processing on demand.
 type collectorBehavior struct {
 	max     int
-	sink    *mesh.EventSink
+	sink    mesh.EventSink
 	process CollectionProcessorFunc
 }
 

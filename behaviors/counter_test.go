@@ -43,18 +43,21 @@ func TestCounterBehavior(t *testing.T) {
 	}
 	behavior := behaviors.NewCounterBehavior(counteval)
 	// Test evaluation.
-	eval := func(evt *mesh.Event) (bool, error) {
+	eval := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		switch evt.Topic() {
 		case behaviors.TopicCounterValues:
 			var values map[string]int
 			err := evt.Payload(&values)
 			if err != nil {
-				return false, err
+				return err
 			}
 			l := len(values)
-			return l == 13 || l == 0, nil
+			if l == 13 || l == 0 {
+				tbe.SetSuccess()
+			}
+			return nil
 		default:
-			return false, nil
+			return nil
 		}
 	}
 	// Run test.
