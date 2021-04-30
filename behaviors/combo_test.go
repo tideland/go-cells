@@ -65,8 +65,8 @@ func TestComboBehavior(t *testing.T) {
 			if err != nil {
 				return err
 			}
-			if distance != 50 {
-				tbe.SetFail("invalid distance %d, expected 50", distance)
+			if distance == 50 {
+				tbe.SetSuccess()
 			}
 		}
 		return nil

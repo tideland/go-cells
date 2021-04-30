@@ -31,35 +31,36 @@ func TestAggregatorBehavior(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	count := 50
 	aggregator := func(aggregate interface{}, evt *mesh.Event) (interface{}, error) {
-		words := aggregate.(map[string]bool)
+		var words map[string]bool
+		if !evt.HasPayload() {
+			words = map[string]bool{}
+		} else {
+			words = aggregate.(map[string]bool)
+		}
 		words[evt.Topic()] = true
 		return words, nil
 	}
-	behavior := behaviors.NewAggregatorBehavior(map[string]bool{}, aggregator)
+	behavior := behaviors.NewAggregatorBehavior(aggregator)
 	// Test evaluation.
 	eval := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		tbe.Push(evt)
-		if tbe.Len() == 2 {
-			// Check first for aggregated.
-			evtA, _ := tbe.First()
-			if evtA.Topic() != behaviors.TopicAggregated {
-				tbe.SetFail("topic not 'aggregated': %s", evtA.Topic())
-				return nil
-			}
+		switch evt.Topic() {
+		case behaviors.TopicAggregated:
 			var words map[string]bool
-			if err := evtA.Payload(&words); err != nil {
+			if err := evt.Payload(&words); err != nil {
 				return err
 			}
-			if len(words) != count {
-				tbe.SetFail("invalid length of words: %d", len(words))
+			if len(words) != count+1 {
+				tbe.SetFail("invalid length of aggregated words: %d", len(words))
 				return nil
 			}
-			// Check second for resetted.
-			evtB, _ := tbe.First()
-			if evtB.Topic() != behaviors.TopicResetted {
-				tbe.SetFail("topic not 'resetted': %s", evtB.Topic())
+		case behaviors.TopicResetted:
+			if evt.HasPayload() {
+				tbe.SetFail("event has illegal payload")
 				return nil
 			}
+		}
+		if tbe.Len() == 2 {
 			tbe.SetSuccess()
 		}
 		return nil

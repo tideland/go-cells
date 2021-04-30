@@ -25,7 +25,6 @@ type AggregatorFunc func(aggregate interface{}, evt *mesh.Event) (interface{}, e
 
 // aggregatorBehavior implements the aggregator behavior.
 type aggregatorBehavior struct {
-	initial    interface{}
 	aggregate  interface{}
 	aggregator AggregatorFunc
 }
@@ -33,10 +32,9 @@ type aggregatorBehavior struct {
 // NewAggregatorBehavior creates a behavior aggregating the received events
 // and emits events with the new aggregate. A "reset!" topic resets the
 // aggregate to nil again.
-func NewAggregatorBehavior(aggregate interface{}, aggregator AggregatorFunc) mesh.Behavior {
+func NewAggregatorBehavior(aggregator AggregatorFunc) mesh.Behavior {
 	return &aggregatorBehavior{
-		initial:    aggregate,
-		aggregate:  aggregate,
+		aggregate:  nil,
 		aggregator: aggregator,
 	}
 }
@@ -55,8 +53,8 @@ func (b *aggregatorBehavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitt
 					return err
 				}
 			case TopicReset:
-				// Reset to initial value.
-				b.aggregate = b.initial
+				// Reset to nil.
+				b.aggregate = nil
 				if err := out.Emit(TopicResetted); err != nil {
 					return err
 				}
