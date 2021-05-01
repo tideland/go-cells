@@ -49,12 +49,18 @@ func newTestbedEvaluator() *TestbedEvaluator {
 
 // SetSuccess signals a successful testing.
 func (tbe *TestbedEvaluator) SetSuccess() {
+	tbe.mu.Lock()
+	defer tbe.mu.Unlock()
+
 	tbe.done = true
 	tbe.success = true
 }
 
 // SetFail signals a failing testing together with a reason.
 func (tbe *TestbedEvaluator) SetFail(reason string, vs ...interface{}) {
+	tbe.mu.Lock()
+	defer tbe.mu.Unlock()
+
 	tbe.done = true
 	tbe.success = false
 	tbe.reason = fmt.Sprintf(reason, vs...)
@@ -62,12 +68,18 @@ func (tbe *TestbedEvaluator) SetFail(reason string, vs ...interface{}) {
 
 // isDone returns true if the testing is done.
 func (tbe *TestbedEvaluator) isDone() bool {
+	tbe.mu.Lock()
+	defer tbe.mu.Unlock()
+
 	return tbe.done
 }
 
 // isDone returns true in case of a successful test, otherwise
 // false and the reason.
 func (tbe *TestbedEvaluator) isSuccesful() (bool, string) {
+	tbe.mu.Lock()
+	defer tbe.mu.Unlock()
+
 	return tbe.success, tbe.reason
 }
 
