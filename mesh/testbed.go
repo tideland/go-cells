@@ -172,7 +172,8 @@ func (tbc *testbedCell) EmitEvent(evt *Event) error {
 func (tbc *testbedCell) push(evt *Event) error {
 	select {
 	case <-tbc.ctx.Done():
-		return errors.New("cell already terminated")
+		// Ignore as test result has been defined otherwhere.
+		return nil
 	case tbc.inc <- evt:
 		return nil
 	}
