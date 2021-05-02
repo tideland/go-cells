@@ -30,17 +30,17 @@ import (
 func TestAggregatorBehavior(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	count := 50
-	aggregator := func(aggregate interface{}, evt *mesh.Event) (interface{}, error) {
-		var words map[string]bool
-		if !evt.HasPayload() {
-			words = map[string]bool{}
-		} else {
-			words = aggregate.(map[string]bool)
+	initializer := func() interface{} {
+		return map[string]bool{
+			"initialized": true,
 		}
+	}
+	aggregator := func(aggregated interface{}, evt *mesh.Event) (interface{}, error) {
+		words := aggregated.(map[string]bool)
 		words[evt.Topic()] = true
 		return words, nil
 	}
-	behavior := behaviors.NewAggregatorBehavior(aggregator)
+	behavior := behaviors.NewAggregatorBehavior(initializer, aggregator)
 	// Test evaluation.
 	eval := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		tbe.Push(evt)
@@ -55,8 +55,12 @@ func TestAggregatorBehavior(t *testing.T) {
 				return nil
 			}
 		case behaviors.TopicResetted:
-			if evt.HasPayload() {
-				tbe.SetFail("event has illegal payload")
+			var words map[string]bool
+			if err := evt.Payload(&words); err != nil {
+				return err
+			}
+			if len(words) != 1 {
+				tbe.SetFail("invalid length of resetted words: %d", len(words))
 				return nil
 			}
 		}
