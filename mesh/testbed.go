@@ -15,7 +15,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 )
 
@@ -31,56 +30,25 @@ import (
 type TestbedEvaluator struct {
 	EventSink
 
-	mu      sync.Mutex
-	done    bool
-	success bool
-	reason  string
+	tb *Testbed
 }
 
 // newTestbedEvaluator returns an initialized testbed context.
-func newTestbedEvaluator() *TestbedEvaluator {
+func newTestbedEvaluator(tb *Testbed) *TestbedEvaluator {
 	return &TestbedEvaluator{
 		EventSink: NewEventSink(0),
-		done:      false,
-		success:   false,
-		reason:    "",
+		tb:        tb,
 	}
 }
 
 // SetSuccess signals a successful testing.
 func (tbe *TestbedEvaluator) SetSuccess() {
-	tbe.mu.Lock()
-	defer tbe.mu.Unlock()
-
-	tbe.done = true
-	tbe.success = true
+	tbe.tb.succeededc <- struct{}{}
 }
 
 // SetFail signals a failing testing together with a reason.
 func (tbe *TestbedEvaluator) SetFail(reason string, vs ...interface{}) {
-	tbe.mu.Lock()
-	defer tbe.mu.Unlock()
-
-	tbe.done = true
-	tbe.success = false
-	tbe.reason = fmt.Sprintf(reason, vs...)
-}
-
-// isDone returns true if the testing is done.
-func (tbe *TestbedEvaluator) isDone() bool {
-	tbe.mu.Lock()
-	defer tbe.mu.Unlock()
-
-	return tbe.done
-}
-
-// isDone returns true in case of a successful test, otherwise
-// false and the reason.
-func (tbe *TestbedEvaluator) isSuccesful() (bool, string) {
-	tbe.mu.Lock()
-	defer tbe.mu.Unlock()
-
-	return tbe.success, tbe.reason
+	tbe.tb.failedc <- fmt.Sprintf(reason, vs...)
 }
 
 // TestbedTester defines a function signature used for evaluating the
@@ -144,7 +112,7 @@ func (tbm testbedMesh) Emitter(name string) (Emitter, error) {
 // testbedCell runs the behavior and provides the needed interfaces.
 type testbedCell struct {
 	ctx      context.Context
-	testbed  *Testbed
+	tb       *Testbed
 	behavior Behavior
 	inc      chan *Event
 }
@@ -153,7 +121,7 @@ type testbedCell struct {
 func newTestbedCell(ctx context.Context, tb *Testbed, behavior Behavior) *testbedCell {
 	tbc := &testbedCell{
 		ctx:      ctx,
-		testbed:  tb,
+		tb:       tb,
 		behavior: behavior,
 		inc:      make(chan *Event),
 	}
@@ -193,12 +161,9 @@ func (tbc *testbedCell) Emit(topic string, payloads ...interface{}) error {
 // EmitEvent implements mesh.Emitter and evaluates the event.
 func (tbc *testbedCell) EmitEvent(evt *Event) error {
 	evt.appendEmitter(tbc.Name())
-	if err := tbc.testbed.test(tbc.testbed.evaluator, evt); err != nil {
-		tbc.testbed.errc <- err
+	if err := tbc.tb.testEvent(evt); err != nil {
+		tbc.tb.errc <- err
 		return err
-	}
-	if tbc.testbed.evaluator.isDone() {
-		tbc.testbed.donec <- struct{}{}
 	}
 	return nil
 }
@@ -235,13 +200,13 @@ func (tbc *testbedCell) backend() {
 
 // testbedEmitter allows the testbed runner to emit events to the testbed.
 type testbedEmitter struct {
-	testbed *Testbed
+	tb *Testbed
 }
 
 // newTesbedEmitter initializes the testbed emitter.
 func newTestbedEmitter(tb *Testbed) *testbedEmitter {
 	return &testbedEmitter{
-		testbed: tb,
+		tb: tb,
 	}
 }
 
@@ -257,7 +222,7 @@ func (tbe *testbedEmitter) Emit(topic string, payloads ...interface{}) error {
 // Emit sends an event to the behavior.
 func (tbe *testbedEmitter) EmitEvent(evt *Event) error {
 	evt.initEmitters()
-	return tbe.testbed.cell.push(evt)
+	return tbe.tb.cell.push(evt)
 }
 
 //--------------------
@@ -274,14 +239,14 @@ func (tbe *testbedEmitter) EmitEvent(evt *Event) error {
 // Testbed.Wait() gets a signal. Otherwise a timeout will be returned to show
 // an internal error.
 type Testbed struct {
-	ctx       context.Context
-	cancel    func()
-	evaluator *TestbedEvaluator
-	test      TestbedTester
-	cell      *testbedCell
-	donec     chan struct{}
-	stoppedc  chan struct{}
-	errc      chan error
+	ctx        context.Context
+	cancel     func()
+	evaluator  *TestbedEvaluator
+	test       TestbedTester
+	cell       *testbedCell
+	succeededc chan struct{}
+	failedc    chan string
+	errc       chan error
 }
 
 // NewTestbed starts a test cell with the given behavior. The tester function
@@ -289,43 +254,44 @@ type Testbed struct {
 func NewTestbed(behavior Behavior, tester TestbedTester) *Testbed {
 	ctx, cancel := context.WithCancel(context.Background())
 	tb := &Testbed{
-		ctx:       ctx,
-		cancel:    cancel,
-		evaluator: newTestbedEvaluator(),
-		test:      tester,
-		donec:     make(chan struct{}),
-		stoppedc:  make(chan struct{}),
-		errc:      make(chan error),
+		ctx:        ctx,
+		cancel:     cancel,
+		test:       tester,
+		succeededc: make(chan struct{}),
+		failedc:    make(chan string),
+		errc:       make(chan error),
 	}
+	tb.evaluator = newTestbedEvaluator(tb)
 	tb.cell = newTestbedCell(ctx, tb, behavior)
 	return tb
 }
 
 // Go runs the testbed rzbber and waits until test ends or a timeout.
 func (tb *Testbed) Go(runner TestbedRunner, timeout time.Duration) error {
-	go tb.run(runner)
+	go runner(newTestbedEmitter(tb))
 	return tb.wait(timeout)
 }
 
-// run runs the testbed runner.
-func (tb *Testbed) run(runner TestbedRunner) {
-	runner(newTestbedEmitter(tb))
-	tb.stoppedc <- struct{}{}
+// testEvent tests an event emitted by the tested behavior.
+func (tb *Testbed) testEvent(evt *Event) error {
+	if err := tb.test(tb.evaluator, evt); err != nil {
+		tb.errc <- err
+		return err
+	}
+	return nil
 }
 
 // wait waits until a test end or error has been signalled or a
 // timeout happened.
 func (tb *Testbed) wait(timeout time.Duration) error {
 	defer tb.cancel()
-	running := true
-	waiting := true
 	now := time.Now()
-	for running || waiting {
+	for {
 		select {
-		case <-tb.stoppedc:
-			running = false
-		case <-tb.donec:
-			waiting = false
+		case <-tb.succeededc:
+			return nil
+		case reason := <-tb.failedc:
+			return errors.New("test failed: " + reason)
 		case err := <-tb.errc:
 			return fmt.Errorf("test error: %v", err)
 		case to := <-time.After(timeout):
@@ -333,12 +299,6 @@ func (tb *Testbed) wait(timeout time.Duration) error {
 			return errors.New("test failed: timeout after " + waited.String())
 		}
 	}
-	// The async testbed runner and the tests are done.
-	success, reason := tb.evaluator.isSuccesful()
-	if !success {
-		return errors.New("test failed: " + reason)
-	}
-	return nil
 }
 
 // EOF
