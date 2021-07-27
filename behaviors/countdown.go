@@ -19,24 +19,24 @@ import (
 // COUNTDOWN BEHAVIOR
 //--------------------
 
-// ZeroFunc is called when the countdown reaches zero. The collected
+// Zeroer is called when the countdown reaches zero. The collected
 // events are passed, the returned event will be emitted.
-type ZeroFunc func(accessor mesh.EventSinkAccessor) (cells.Event, error)
+type Zeroer func(r mesh.EventSinkReader) (*mesh.Event, error)
 
 // CountdownBehavior collects a number of events. When this number is reached
 // a zero function with access to these eventsn will be called. Its returned
 // event will be emitted.
 type CountdownBehavior struct {
-	t    int
-	zero ZeroFunc
+	t      int
+	zeroer Zeroer
 }
 
 // NewCountdownBehavior creates a countdown behavior based on the passed
 // t value and zeroer function.
-func NewCountdownBehavior(t int, zero ZeroFunc) *CountdownBehavior {
+func NewCountdownBehavior(t int, zeroer Zeroer) *CountdownBehavior {
 	return &CountdownBehavior{
-		t:    t,
-		zero: zero,
+		t:      t,
+		zeroer: zeroer,
 	}
 }
 
@@ -50,7 +50,7 @@ func (b *CountdownBehavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitte
 		case evt := <-in.Pull():
 			l := sink.Push(evt)
 			if l == b.t {
-				outEvt, err := zero(sink)
+				outEvt, err := b.zeroer(sink)
 				if err != nil {
 					return err
 				}
