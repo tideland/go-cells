@@ -1,0 +1,127 @@
+// Tideland Go Cells - Behaviors - Evaluator
+//
+// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
+//
+// All rights reserved. Use of this source code is governed
+// by the new BSD license.
+
+package evaluator // import "tideland.dev/go/cells/behaviors/evaluator"
+
+//--------------------
+// IMPORTS
+//--------------------
+
+import (
+	"sort"
+
+	"tideland.dev/go/cells/mesh"
+)
+
+//--------------------
+// TOPICS
+//--------------------
+
+const (
+	TopicEvaluate   = "evaluate!"
+	TopicEvaluation = "evaluation"
+	TopicReset      = "reset!"
+)
+
+//--------------------
+// HELPER
+//--------------------
+
+// EvaluationFunc is a function returning a rating for each received event.
+type EvaluationFunc func(evt *mesh.Event) (float64, error)
+
+// Evaluation contains the aggregated result of all evaluations.
+type Evaluation struct {
+	Count     int
+	MinRating float64
+	MaxRating float64
+	AvgRating float64
+	MedRating float64
+}
+
+//--------------------
+// BEHAVIOR
+//--------------------
+
+// evaluatorBehavior ebvaluates incomming events nummerically.
+type evaluatorBehavior struct {
+	evaluate      EvaluationFunc
+	maxRatings    int
+	ratings       []float64
+	sortedRatings []float64
+}
+
+// New ...
+func New() mesh.Behavior {
+	return &evaluatorBehavior{}
+}
+
+// Go implements the Behavior interface.
+func (b *evaluatorBehavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
+	for {
+		select {
+		case <-cell.Context().Done():
+			return nil
+		case evt := <-in.Pull():
+			switch evt.Topic() {
+			case TopicReset:
+				b.maxRatings = 0
+				b.ratings = nil
+				b.sortedRatings = nil
+			case TopicEvaluate:
+				evaluation := b.evaluateRatings()
+				out.Emit(TopicEvaluation, evaluation)
+			default:
+				rating, err := b.evaluate(evt)
+				if err != nil {
+					return err
+				}
+				b.ratings = append(b.ratings, rating)
+				if b.maxRatings > 0 && len(b.ratings) > b.maxRatings {
+					// Take care for size.
+					b.ratings = b.ratings[1:]
+				}
+				if len(b.sortedRatings) < len(b.ratings) {
+					// Let it grow up to the needed size.
+					b.sortedRatings = append(b.sortedRatings, 0.0)
+				}
+			}
+		}
+	}
+}
+
+// evaluateRatings evaluates the collected ratings.
+func (b *evaluatorBehavior) evaluateRatings() Evaluation {
+	var evaluation Evaluation
+
+	copy(b.sortedRatings, b.ratings)
+	sort.Float64s(b.sortedRatings)
+	// Count.
+	evaluation.Count = len(b.sortedRatings)
+	// Average.
+	totalRating := 0.0
+	for _, rating := range b.sortedRatings {
+		totalRating += rating
+	}
+	evaluation.AvgRating = totalRating / float64(evaluation.Count)
+	// Median.
+	if evaluation.Count%2 == 0 {
+		// Even, have to calculate.
+		middle := evaluation.Count / 2
+		evaluation.MedRating = (b.sortedRatings[middle-1] + b.sortedRatings[middle]) / 2
+	} else {
+		// Odd, can take the middle.
+		evaluation.MedRating = b.sortedRatings[evaluation.Count/2]
+	}
+	// Minimum and maximum.
+	evaluation.MinRating = b.sortedRatings[0]
+	evaluation.MaxRating = b.sortedRatings[len(b.sortedRatings)-1]
+
+	return evaluation
+}
+
+// EOF
