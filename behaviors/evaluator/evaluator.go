@@ -56,6 +56,8 @@ type EvaluatorBehavior struct {
 	sortedRatings []float64
 }
 
+var _ mesh.Behavior = &EvaluatorBehavior{}
+
 // New initializes and returns a new Behavior using the given function
 // for the evaluation of the individual received events.
 func New(evaluate EvaluationFunc) *EvaluatorBehavior {
