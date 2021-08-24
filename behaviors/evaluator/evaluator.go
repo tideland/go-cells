@@ -22,9 +22,10 @@ import (
 //--------------------
 
 const (
-	TopicEvaluate   = "evaluate!"
-	TopicEvaluation = "evaluation"
-	TopicReset      = "reset!"
+	TopicEvaluate       = "evaluate!"
+	TopicEvaluationDone = "evaluation-done"
+	TopicReset          = "reset!"
+	TopicResetDone      = "reset-done"
 )
 
 //--------------------
@@ -47,21 +48,24 @@ type Evaluation struct {
 // BEHAVIOR
 //--------------------
 
-// evaluatorBehavior ebvaluates incomming events nummerically.
-type evaluatorBehavior struct {
+// EvaluatorBehavior ebvaluates incomming events nummerically.
+type EvaluatorBehavior struct {
 	evaluate      EvaluationFunc
 	maxRatings    int
 	ratings       []float64
 	sortedRatings []float64
 }
 
-// New ...
-func New() mesh.Behavior {
-	return &evaluatorBehavior{}
+// New initializes and returns a new Behavior using the given function
+// for the evaluation of the individual received events.
+func New(evaluate EvaluationFunc) *EvaluatorBehavior {
+	return &EvaluatorBehavior{
+		evaluate: evaluate,
+	}
 }
 
 // Go implements the Behavior interface.
-func (b *evaluatorBehavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
+func (b *EvaluatorBehavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
 	for {
 		select {
 		case <-cell.Context().Done():
@@ -72,9 +76,10 @@ func (b *evaluatorBehavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitte
 				b.maxRatings = 0
 				b.ratings = nil
 				b.sortedRatings = nil
+				out.Emit(TopicResetDone)
 			case TopicEvaluate:
 				evaluation := b.evaluateRatings()
-				out.Emit(TopicEvaluation, evaluation)
+				out.Emit(TopicEvaluationDone, evaluation)
 			default:
 				rating, err := b.evaluate(evt)
 				if err != nil {
@@ -95,7 +100,7 @@ func (b *evaluatorBehavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitte
 }
 
 // evaluateRatings evaluates the collected ratings.
-func (b *evaluatorBehavior) evaluateRatings() Evaluation {
+func (b *EvaluatorBehavior) evaluateRatings() Evaluation {
 	var evaluation Evaluation
 
 	copy(b.sortedRatings, b.ratings)
