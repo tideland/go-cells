@@ -12,6 +12,7 @@ package evaluator_test // import "tideland.dev/go/cells/behaviors/evaluator"
 //--------------------
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -43,7 +44,7 @@ func TestSuccess(t *testing.T) {
 			if err := evt.Payload(&evaluation); err != nil {
 				tbe.SetFail("can not retrieve evaluation payload: %v", err)
 			}
-			if evaluation.Count != 1000 {
+			if evaluation.Count != 10000 {
 				tbe.SetFail("evaluation count is wrong: %d", evaluation.Count)
 			}
 			if evaluation.MinRating != 3.0 {
@@ -60,13 +61,46 @@ func TestSuccess(t *testing.T) {
 	// Run test.
 	tb := mesh.NewTestbed(behavior, test)
 	err := tb.Go(func(out mesh.Emitter) {
-		for i := 0; i < 1000; i++ {
+		for i := 0; i < 10000; i++ {
 			topic := generator.LimitedWord(3, 8)
 			out.Emit(topic)
 		}
-		// Retrieve, erase, and retrieve again.
+		// Retrieve and reset.
 		out.Emit(evaluator.TopicEvaluate)
 		out.Emit(evaluator.TopicReset)
+	}, time.Second)
+	assert.NoError(err)
+}
+
+// TestFail verifies the wanted failing of the evaluation.
+func TestFail(t *testing.T) {
+	assert := asserts.NewTesting(t, asserts.FailStop)
+	evaluateFunc := func(evt *mesh.Event) (float64, error) {
+		if evt.Topic() == "ouch" {
+			return 0.0, errors.New("ouch")
+		}
+		return 1.0, nil
+	}
+	behavior := evaluator.New(evaluateFunc)
+	// Test events in testbed.
+	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
+		if evt.Topic() == mesh.TopicTestbedError {
+			var cellError mesh.PayloadCellError
+			if err := evt.Payload(&cellError); err != nil {
+				tbe.SetFail("invalid payload")
+			}
+			if cellError.Error != "ouch" {
+				tbe.SetFail("invalid error: %s", cellError.Error)
+			}
+			tbe.SetSuccess()
+			return nil
+		}
+		return nil
+	}
+	// Run test.
+	tb := mesh.NewTestbed(behavior, test)
+	err := tb.Go(func(out mesh.Emitter) {
+		out.Emit("ouch")
 	}, time.Second)
 	assert.NoError(err)
 }
