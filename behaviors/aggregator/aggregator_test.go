@@ -41,8 +41,8 @@ func TestAggregatorBehavior(t *testing.T) {
 		return words, nil
 	}
 	behavior := aggregator.New(initializer, aggregatorFunc)
-	// Test evaluation.
-	eval := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
+	// Testing.
+	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		tbe.Push(evt)
 		switch evt.Topic() {
 		case aggregator.TopicAggregateDone:
@@ -70,7 +70,7 @@ func TestAggregatorBehavior(t *testing.T) {
 		return nil
 	}
 	// Run tests.
-	tb := mesh.NewTestbed(behavior, eval)
+	tb := mesh.NewTestbed(behavior, test)
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < count; i++ {
 			topic := strconv.Itoa(i)

@@ -38,20 +38,19 @@ type AggregatorFunc func(status interface{}, evt *mesh.Event) (interface{}, erro
 // BEHAVIOR
 //--------------------
 
-// AggregatorBehavior implements the aggregator behavior.
-type AggregatorBehavior struct {
+// Behavior implements the aggregator behavior.
+type Behavior struct {
 	initialize func() interface{}
 	status     interface{}
 	aggregate  AggregatorFunc
 }
 
-var _ mesh.Behavior = &AggregatorBehavior{}
+var _ mesh.Behavior = &Behavior{}
 
-// NewAggregatorBehavior creates a behavior aggregating the received events
-// and emits events with the new aggregate. A "reset!" topic resets the
-// aggregate to nil again.
-func New(initializer func() interface{}, aggregator AggregatorFunc) *AggregatorBehavior {
-	b := &AggregatorBehavior{
+// New creates a behavior aggregating the received events and emits events with
+//the new aggregate. A "reset!" topic resets the aggregate to nil again.
+func New(initializer func() interface{}, aggregator AggregatorFunc) *Behavior {
+	b := &Behavior{
 		initialize: initializer,
 		status:     nil,
 		aggregate:  aggregator,
@@ -62,8 +61,8 @@ func New(initializer func() interface{}, aggregator AggregatorFunc) *AggregatorB
 	return b
 }
 
-// Go implements the Behavior interface.
-func (b *AggregatorBehavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
+// Go implements the mesh.Behavior interface.
+func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
 	for {
 		select {
 		case <-cell.Context().Done():
@@ -71,12 +70,10 @@ func (b *AggregatorBehavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitt
 		case evt := <-in.Pull():
 			switch evt.Topic() {
 			case TopicAggregate:
-				// Request status.
 				if err := out.Emit(TopicAggregateDone, b.status); err != nil {
 					return err
 				}
 			case TopicReset:
-				// Reset.
 				b.status = nil
 				if b.initialize != nil {
 					b.status = b.initialize()
@@ -85,7 +82,6 @@ func (b *AggregatorBehavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitt
 					return err
 				}
 			default:
-				// Aggregate the event.
 				status, err := b.aggregate(b.status, evt)
 				if err != nil {
 					return err
