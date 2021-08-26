@@ -1,11 +1,11 @@
-// Tideland Go Cells - Behaviors - Unit Tests
+// Tideland Go Cells - Behaviors - Combo - Unit Tests
 //
 // Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
 
-package behaviors_test // import "tideland.dev/go/cells/behaviors"
+package combo_test // import "tideland.dev/go/cells/behaviors/combo"
 
 //--------------------
 // IMPORTS
@@ -19,6 +19,7 @@ import (
 	"tideland.dev/go/audit/generators"
 
 	"tideland.dev/go/cells/behaviors"
+	"tideland.dev/go/cells/behaviors/combo"
 	"tideland.dev/go/cells/mesh"
 )
 
@@ -26,13 +27,13 @@ import (
 // TESTS
 //--------------------
 
-// TestComboBehavior tests the combo behavior.
-func TestComboBehavior(t *testing.T) {
+// TestSuccess verifies the successful double finding of a topic.
+func TestSuccess(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	generator := generators.New(generators.FixedRand())
 	topics := generator.Words(50)
 	wanted := "test-topic"
-	matcher := func(r mesh.EventSinkReader) (behaviors.CriterionMatch, interface{}, error) {
+	matcher := func(r mesh.EventSinkReader) (combo.CriterionMatch, interface{}, error) {
 		// Matcher tries to find the wanted topic twice. When found twice
 		// the distance will be returned.
 		var found []int
@@ -42,22 +43,22 @@ func TestComboBehavior(t *testing.T) {
 			}
 			return nil
 		}); err != nil {
-			return behaviors.CriterionError, nil, err
+			return combo.CriterionError, nil, err
 		}
 		// Check if found and where.
 		switch {
 		case len(found) == 2:
-			return behaviors.CriterionDone, found[1] - found[0], nil
+			return combo.CriterionDone, found[1] - found[0], nil
 		case len(found) == 1:
 			if found[0] == 0 {
-				return behaviors.CriterionKeep, nil, nil
+				return combo.CriterionKeep, nil, nil
 			}
 		}
-		return behaviors.CriterionDropFirst, nil, nil
+		return combo.CriterionDropFirst, nil, nil
 	}
-	behavior := behaviors.NewComboBehavior(matcher)
-	// Test evaluation.
-	eval := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
+	behavior := combo.New(matcher)
+	// Testing.
+	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		switch evt.Topic() {
 		case behaviors.TopicCriterionDone:
 			var distance int
@@ -72,7 +73,7 @@ func TestComboBehavior(t *testing.T) {
 		return nil
 	}
 	// Run test.
-	tb := mesh.NewTestbed(behavior, eval)
+	tb := mesh.NewTestbed(behavior, test)
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < 100; i++ {
 			var topic string
