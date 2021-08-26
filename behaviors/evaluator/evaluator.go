@@ -66,7 +66,7 @@ func New(evaluate EvaluationFunc) *Behavior {
 	}
 }
 
-// Go implements the Behavior interface.
+// Go implements the mesh.Behavior interface.
 func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
 	for {
 		select {
