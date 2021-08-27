@@ -57,16 +57,18 @@ const (
 // BEHAVIOR
 //--------------------
 
-// Behavior implements the combo behavior.
+// Behavior checks the event stream for a combination of events defined by
+// a criterion function. In case of a match an according event is emitted.
 type Behavior struct {
 	matches ComboCriterionFunc
 	sink    mesh.EventSink
 }
 
-// New creates a behavior checking an event stream for a combination of events
-// defined by a criterion. In case of a matching situation an according event
-// is emitted.
-func New(matcher ComboCriterionFunc) mesh.Behavior {
+var _ mesh.Behavior = &Behavior{}
+
+// New creates an instance of the combo behavior using the given criterion
+// function.
+func New(matcher ComboCriterionFunc) *Behavior {
 	return &Behavior{
 		matches: matcher,
 		sink:    mesh.NewEventSink(0),

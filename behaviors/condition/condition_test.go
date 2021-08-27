@@ -1,11 +1,11 @@
-// Tideland Go Cells - Behaviors - Unit Tests
+// Tideland Go Cells - Behaviors - Condition - Unit Tests
 //
 // Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
 
-package behaviors_test // import "tideland.dev/go/cells/behaviors"
+package condition_test // import "tideland.dev/go/cells/behaviors/condition"
 
 //--------------------
 // IMPORTS
@@ -18,7 +18,7 @@ import (
 	"tideland.dev/go/audit/asserts"
 	"tideland.dev/go/audit/generators"
 
-	"tideland.dev/go/cells/behaviors"
+	"tideland.dev/go/cells/behaviors/condition"
 	"tideland.dev/go/cells/mesh"
 )
 
@@ -26,9 +26,8 @@ import (
 // TESTS
 //--------------------
 
-// TestConditionBehavior tests events for a criterium and processes
-// matching ones.
-func TestConditionBehavior(t *testing.T) {
+// TestSuccess verifies the successful scanning for conditions.
+func TestSuccess(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	generator := generators.New(generators.FixedRand())
 	topics := []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "now"}
@@ -39,16 +38,16 @@ func TestConditionBehavior(t *testing.T) {
 		topic := "found-" + evt.Topic()
 		return out.Emit(topic)
 	}
-	behavior := behaviors.NewConditionBehavior(tester, processor)
-	// Test evaluation.
-	eval := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
+	behavior := condition.New(tester, processor)
+	// Testing.
+	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		if evt.Topic() == "found-now" {
 			tbe.SetSuccess()
 		}
 		return nil
 	}
 	// Run test.
-	tb := mesh.NewTestbed(behavior, eval)
+	tb := mesh.NewTestbed(behavior, test)
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < 50; i++ {
 			topic := generator.OneStringOf(topics...)
