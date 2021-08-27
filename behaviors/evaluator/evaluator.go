@@ -48,24 +48,26 @@ type Evaluation struct {
 // BEHAVIOR
 //--------------------
 
-// EvaluatorBehavior ebvaluates incomming events nummerically.
-type EvaluatorBehavior struct {
+// Behavior ebvaluates incomming events nummerically.
+type Behavior struct {
 	evaluate      EvaluationFunc
 	maxRatings    int
 	ratings       []float64
 	sortedRatings []float64
 }
 
+var _ mesh.Behavior = &Behavior{}
+
 // New initializes and returns a new Behavior using the given function
 // for the evaluation of the individual received events.
-func New(evaluate EvaluationFunc) *EvaluatorBehavior {
-	return &EvaluatorBehavior{
+func New(evaluate EvaluationFunc) *Behavior {
+	return &Behavior{
 		evaluate: evaluate,
 	}
 }
 
-// Go implements the Behavior interface.
-func (b *EvaluatorBehavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
+// Go implements the mesh.Behavior interface.
+func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
 	for {
 		select {
 		case <-cell.Context().Done():
@@ -100,7 +102,7 @@ func (b *EvaluatorBehavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitte
 }
 
 // evaluateRatings evaluates the collected ratings.
-func (b *EvaluatorBehavior) evaluateRatings() Evaluation {
+func (b *Behavior) evaluateRatings() Evaluation {
 	var evaluation Evaluation
 
 	copy(b.sortedRatings, b.ratings)

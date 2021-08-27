@@ -1,11 +1,11 @@
-// Tideland Go Cells - Behaviors
+// Tideland Go Cells - Behaviors - Combo
 //
 // Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
 
-package behaviors // import "tideland.dev/go/cells/behaviors"
+package combo // import "tideland.dev/go/cells/behaviors/combo"
 
 //--------------------
 // IMPORTS
@@ -18,7 +18,17 @@ import (
 )
 
 //--------------------
-// COMBO BEHAVIOR
+// TOPICS
+//--------------------
+
+const (
+	TopicCriterionDone = "criterion-done"
+	TopicReset         = "reset!"
+	TopicResetDone     = "reset-done"
+)
+
+//--------------------
+// HELPER
 //--------------------
 
 // ComboCriterionFunc is used by the combo behavior. It has to return
@@ -30,24 +40,43 @@ import (
 // has to return a payload which will be emitted.
 type ComboCriterionFunc func(r mesh.EventSinkReader) (CriterionMatch, interface{}, error)
 
-// comboBehavior implements the combo behavior.
-type comboBehavior struct {
+// CriterionMatch allows a combo criterion func to signal its
+// analysis rersult.
+type CriterionMatch int
+
+// Criterion matches.
+const (
+	CriterionError CriterionMatch = iota
+	CriterionDone
+	CriterionKeep
+	CriterionDropFirst
+	CriterionDropLast
+)
+
+//--------------------
+// BEHAVIOR
+//--------------------
+
+// Behavior checks the event stream for a combination of events defined by
+// a criterion function. In case of a match an according event is emitted.
+type Behavior struct {
 	matches ComboCriterionFunc
 	sink    mesh.EventSink
 }
 
-// NewComboBehavior creates a behavior checking an event stream for a
-// combination of events defined by a criterion. In case of a matching
-// situation an according event is emitted.
-func NewComboBehavior(matcher ComboCriterionFunc) mesh.Behavior {
-	return &comboBehavior{
+var _ mesh.Behavior = &Behavior{}
+
+// New creates an instance of the combo behavior using the given criterion
+// function.
+func New(matcher ComboCriterionFunc) *Behavior {
+	return &Behavior{
 		matches: matcher,
 		sink:    mesh.NewEventSink(0),
 	}
 }
 
-// Go collects the events and runs the criterion matcher to check them.
-func (b *comboBehavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
+// Go implements the mesh.Behavior interface.
+func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
 	for {
 		select {
 		case <-cell.Context().Done():
@@ -56,6 +85,7 @@ func (b *comboBehavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) e
 			switch evt.Topic() {
 			case TopicReset:
 				b.sink.Clear()
+				out.Emit(TopicResetDone)
 			default:
 				b.sink.Push(evt)
 				matches, data, err := b.matches(b.sink)
