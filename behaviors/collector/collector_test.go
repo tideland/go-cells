@@ -18,7 +18,6 @@ import (
 	"tideland.dev/go/audit/asserts"
 	"tideland.dev/go/audit/generators"
 
-	"tideland.dev/go/cells/behaviors"
 	"tideland.dev/go/cells/behaviors/collector"
 	"tideland.dev/go/cells/mesh"
 )
@@ -46,7 +45,7 @@ func TestSuccess(t *testing.T) {
 			assert.NoError(err)
 			assert.Equal(l, 10)
 			tbe.SetSuccess()
-		case behaviors.TopicResetted:
+		case collector.TopicResetDone:
 			return nil
 		}
 		return nil
@@ -57,8 +56,8 @@ func TestSuccess(t *testing.T) {
 		for _, topic := range generator.Words(25) {
 			out.Emit(topic)
 		}
-		out.Emit(behaviors.TopicProcess)
-		out.Emit(behaviors.TopicReset)
+		out.Emit(collector.TopicProcess)
+		out.Emit(collector.TopicReset)
 	}, time.Second)
 	assert.NoError(err)
 }

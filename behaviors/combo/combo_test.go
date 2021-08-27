@@ -18,7 +18,6 @@ import (
 	"tideland.dev/go/audit/asserts"
 	"tideland.dev/go/audit/generators"
 
-	"tideland.dev/go/cells/behaviors"
 	"tideland.dev/go/cells/behaviors/combo"
 	"tideland.dev/go/cells/mesh"
 )
@@ -60,7 +59,7 @@ func TestSuccess(t *testing.T) {
 	// Testing.
 	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		switch evt.Topic() {
-		case behaviors.TopicCriterionDone:
+		case combo.TopicCriterionDone:
 			var distance int
 			err := evt.Payload(&distance)
 			if err != nil {
