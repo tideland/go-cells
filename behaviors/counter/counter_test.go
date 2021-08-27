@@ -1,11 +1,11 @@
-// Tideland Go Cells - Behaviors - Unit Tests
+// Tideland Go Cells - Behaviors - Counter - Unit Tests
 //
 // Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
 
-package behaviors_test // import "tideland.dev/go/cells/behaviors"
+package counter_test // import "tideland.dev/go/cells/behaviors/counter"
 
 //--------------------
 // IMPORTS
@@ -19,7 +19,7 @@ import (
 	"tideland.dev/go/audit/asserts"
 	"tideland.dev/go/audit/generators"
 
-	"tideland.dev/go/cells/behaviors"
+	"tideland.dev/go/cells/behaviors/counter"
 	"tideland.dev/go/cells/mesh"
 )
 
@@ -27,31 +27,31 @@ import (
 // TESTS
 //--------------------
 
-// TestCounterBehavior tests counting and reacting via the
-// countung behavior.
-func TestCounterBehavior(t *testing.T) {
+// TestSuccess tests the successful counting of events and resetting the counters.
+func TestSuccess(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	generator := generators.New(generators.FixedRand())
 	topics := []string{"alpha", "bravo", "charly", "delta", "echo"}
 	counteval := func(evt *mesh.Event) ([]string, error) {
-		var incrs []string
+		var counters []string
 		for _, r := range evt.Topic() {
-			reg := fmt.Sprintf("reg-%v", r)
-			incrs = append(incrs, reg)
+			counter := fmt.Sprintf("%v", r)
+			counters = append(counters, counter)
 		}
-		return incrs, nil
+		return counters, nil
 	}
-	behavior := behaviors.NewCounterBehavior(counteval)
-	// Test evaluation.
-	eval := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
+	behavior := counter.New(counteval)
+	// Testing.
+	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		switch evt.Topic() {
-		case behaviors.TopicCounterValues:
-			var values map[string]int
-			err := evt.Payload(&values)
+		case counter.TopicCountersDone:
+			var counters map[string]int
+			err := evt.Payload(&counters)
 			if err != nil {
 				return err
 			}
-			l := len(values)
+			l := len(counters)
+			// 13 characters = 13 counters and 0 after a reset.
 			if l == 13 || l == 0 {
 				tbe.SetSuccess()
 			}
@@ -61,16 +61,16 @@ func TestCounterBehavior(t *testing.T) {
 		}
 	}
 	// Run test.
-	tb := mesh.NewTestbed(behavior, eval)
+	tb := mesh.NewTestbed(behavior, test)
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < 50; i++ {
 			topic := generator.OneStringOf(topics...)
 			out.Emit(topic)
 		}
 		// Retrieve, erase, and retrieve again.
-		out.Emit(behaviors.TopicCounterStatus)
-		out.Emit(behaviors.TopicCounterReset)
-		out.Emit(behaviors.TopicCounterStatus)
+		out.Emit(counter.TopicCounters)
+		out.Emit(counter.TopicReset)
+		out.Emit(counter.TopicCounters)
 	}, time.Second)
 	assert.NoError(err)
 }
