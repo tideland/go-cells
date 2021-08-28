@@ -29,8 +29,9 @@ type ConditionProcessorFunc func(cell mesh.Cell, evt *mesh.Event, out mesh.Emitt
 // BEHAVIOR
 //--------------------
 
-// Behavior check if an incoming event fillfills a given condition. If the test
-// function returns true the process function is called.
+// Behavior checks if an incoming event fillfills a given condition. This
+// condition is defined by a given condition tester function. If that
+// function returns true a given process function is called.
 type Behavior struct {
 	test    ConditionTesterFunc
 	process ConditionProcessorFunc
@@ -38,9 +39,8 @@ type Behavior struct {
 
 var _ mesh.Behavior = &Behavior{}
 
-// New creates a behavior testing of a cell
-// fullfills a given condition. If the test returns true the
-// processor is called.
+// New creates a condition behavior instance with the given tester and
+// process functions.
 func New(tester ConditionTesterFunc, processor ConditionProcessorFunc) *Behavior {
 	return &Behavior{
 		test:    tester,
@@ -48,8 +48,7 @@ func New(tester ConditionTesterFunc, processor ConditionProcessorFunc) *Behavior
 	}
 }
 
-// Go checks the condition and calls the process in case of a
-// positive test.
+// Go implements the mesh.Behavior interface.
 func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
 	for {
 		select {

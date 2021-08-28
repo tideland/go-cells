@@ -48,7 +48,9 @@ type Evaluation struct {
 // BEHAVIOR
 //--------------------
 
-// Behavior ebvaluates incomming events nummerically.
+// Behavior evaluations each event using a given function, which returns
+// a rating. The behavior counts these, looks for minimum and maximum rate,
+// and calculates the average and the medium.
 type Behavior struct {
 	evaluate      EvaluationFunc
 	maxRatings    int
@@ -58,8 +60,7 @@ type Behavior struct {
 
 var _ mesh.Behavior = &Behavior{}
 
-// New initializes and returns a new Behavior using the given function
-// for the evaluation of the individual received events.
+// New create a new instance with the given evaluator.
 func New(evaluate EvaluationFunc) *Behavior {
 	return &Behavior{
 		evaluate: evaluate,

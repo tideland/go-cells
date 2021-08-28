@@ -38,7 +38,8 @@ type AggregatorFunc func(status interface{}, evt *mesh.Event) (interface{}, erro
 // BEHAVIOR
 //--------------------
 
-// Behavior implements the aggregator behavior.
+// Behavior provides a behavior which aggregates the stream of events with
+// a given function. A received "reset!" topic resets the status.
 type Behavior struct {
 	initialize func() interface{}
 	status     interface{}
@@ -47,8 +48,9 @@ type Behavior struct {
 
 var _ mesh.Behavior = &Behavior{}
 
-// New creates a behavior aggregating the received events and emits events with
-//the new aggregate. A "reset!" topic resets the aggregate to nil again.
+// New creates an instance of the aggregator behavior with the given
+// aggregator function.The initializer function creates the first value
+// before aggregating.
 func New(initializer func() interface{}, aggregator AggregatorFunc) *Behavior {
 	b := &Behavior{
 		initialize: initializer,

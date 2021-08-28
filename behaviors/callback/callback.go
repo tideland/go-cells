@@ -34,14 +34,14 @@ type Behavior struct {
 
 var _ mesh.Behavior = &Behavior{}
 
-// New creates a new callback behavior with the given callback functions.
+// New creates an instance using the given callback functions.
 func New(callbacks ...CallbackFunc) *Behavior {
 	return &Behavior{
 		callbacks: callbacks,
 	}
 }
 
-// Go implements mesh.Cell.
+// Go implements the mesh.Behavior interface.
 func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
 	for {
 		select {

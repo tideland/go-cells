@@ -37,8 +37,8 @@ type Behavior struct {
 
 var _ mesh.Behavior = &Behavior{}
 
-// New creates a countdown behavior based on the passed
-// t value and zeroer function.
+// New creates a countdown behavior based on the given t value
+// and a zeroer function.
 func New(t int, zeroer ZeroFunc) *Behavior {
 	return &Behavior{
 		t:      t,

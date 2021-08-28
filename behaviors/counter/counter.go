@@ -57,7 +57,7 @@ func New(eval CounterEvaluationFunc) *Behavior {
 	}
 }
 
-// Go evaluates the incoming events and increases according variables.
+// Go implements the mesh.Behavior interface.
 func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
 	for {
 		select {
