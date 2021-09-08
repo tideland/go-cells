@@ -22,7 +22,7 @@ import (
 // Behavior broadcasts all received events without change to all subscribers.
 type Behavior struct{}
 
-var _ mesh.Behavior = &Behavior{}
+var _ mesh.Behavior = (*Behavior)(nil)
 
 // New creates a broadcaster behavior.
 func New() *Behavior {

@@ -20,12 +20,19 @@ I hope you like it. ;)
 
 The project already contains some standard behaviors, the number is still growing.
 
-* **Aggregator** aggregates events and emits each aggregated value.
-* **Broadcaster** simply emits received events to all subscribers.
-* **Callback** calls a number of passed functions for each received event.
-* **Collector** collects events which can be processed on demand.
-* **Combo** waits for a user-defined combination of events.
-* **Condition** tests events for conditions using a tester function and calls a processor then.
+- **Aggregator** aggregates events and emits each aggregated value.
+- **Broadcaster** simply emits received events to all subscribers.
+- **Callback** calls a number of passed functions for each received event.
+- **Collector** collects events which can be processed on demand.
+- **Combo** waits for a user-defined combination of events.
+- **Condition** tests events for conditions using a tester function and calls a
+  processor then.
+- **Countdown** counts a number of events down to zero and executes an event returning
+  function. The event will be emitted then.
+- **Counter** counts events, the counters can be retrieved.
+- **Evaluator** evaluates events based on a user-defined function which returns a rating.
+- **Filter** re-emits received events based on a user-defined filter. It can be including
+  or excluding.
 
 ## Contributors
 
