@@ -36,7 +36,7 @@ func TestSuccess(t *testing.T) {
 		return float64(l), nil
 	}
 	behavior := evaluator.New(evaluateFunc)
-	// Test events in testbed.
+	// Testing.
 	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		switch evt.Topic() {
 		case evaluator.TopicEvaluationDone:

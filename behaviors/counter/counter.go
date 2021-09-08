@@ -47,7 +47,7 @@ type Behavior struct {
 	counter map[string]int
 }
 
-var _ mesh.Behavior = &Behavior{}
+var _ mesh.Behavior = (*Behavior)(nil)
 
 // New instantiatas a counter behavior with the given evaluator.
 func New(eval CounterEvaluationFunc) *Behavior {

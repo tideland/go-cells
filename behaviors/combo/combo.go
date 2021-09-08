@@ -64,7 +64,7 @@ type Behavior struct {
 	sink    mesh.EventSink
 }
 
-var _ mesh.Behavior = &Behavior{}
+var _ mesh.Behavior = (*Behavior)(nil)
 
 // New creates an instance of the combo behavior using the given criterion
 // function.

@@ -37,7 +37,7 @@ type Behavior struct {
 	process ConditionProcessorFunc
 }
 
-var _ mesh.Behavior = &Behavior{}
+var _ mesh.Behavior = (*Behavior)(nil)
 
 // New creates a condition behavior instance with the given tester and
 // process functions.

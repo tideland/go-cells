@@ -32,7 +32,7 @@ type Behavior struct {
 	callbacks []CallbackFunc
 }
 
-var _ mesh.Behavior = &Behavior{}
+var _ mesh.Behavior = (*Behavior)(nil)
 
 // New creates an instance using the given callback functions.
 func New(callbacks ...CallbackFunc) *Behavior {

@@ -44,7 +44,7 @@ type Behavior struct {
 	process CollectionProcessorFunc
 }
 
-var _ mesh.Behavior = &Behavior{}
+var _ mesh.Behavior = (*Behavior)(nil)
 
 // New collects geven maximum number of events. If the number gets too large the first
 // one will be deleted. After "process!" topic it processes it and emits the result as

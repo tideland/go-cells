@@ -46,7 +46,7 @@ type Behavior struct {
 	aggregate  AggregatorFunc
 }
 
-var _ mesh.Behavior = &Behavior{}
+var _ mesh.Behavior = (*Behavior)(nil)
 
 // New creates an instance of the aggregator behavior with the given
 // aggregator function.The initializer function creates the first value

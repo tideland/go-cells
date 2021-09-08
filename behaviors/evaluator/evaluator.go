@@ -58,9 +58,9 @@ type Behavior struct {
 	sortedRatings []float64
 }
 
-var _ mesh.Behavior = &Behavior{}
+var _ mesh.Behavior = (*Behavior)(nil)
 
-// New create a new instance with the given evaluator.
+// New creates a new instance with the given evaluator.
 func New(evaluate EvaluationFunc) *Behavior {
 	return &Behavior{
 		evaluate: evaluate,

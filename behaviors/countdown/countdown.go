@@ -35,7 +35,7 @@ type Behavior struct {
 	zeroer ZeroFunc
 }
 
-var _ mesh.Behavior = &Behavior{}
+var _ mesh.Behavior = (*Behavior)(nil)
 
 // New creates a countdown behavior based on the given t value
 // and a zeroer function.
