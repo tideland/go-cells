@@ -3,7 +3,7 @@
 [![GitHub release](https://img.shields.io/github/release/tideland/go-cells.svg)](https://github.com/tideland/go-cells)
 [![GitHub license](https://img.shields.io/badge/license-New%20BSD-blue.svg)](https://raw.githubusercontent.com/tideland/go-cells/master/LICENSE)
 [![Go Module](https://img.shields.io/github/go-mod/go-version/tideland/go-cells)](https://github.com/tideland/go-cells/blob/master/go.mod)
-[![GoDoc](https://godoc.org/tideland.dev/go/together?status.svg)](https://pkg.go.dev/mod/tideland.dev/go/together?tab=packages)
+[![GoDoc](https://godoc.org/tideland.dev/go/cells?status.svg)](https://pkg.go.dev/mod/tideland.dev/go/cells?tab=packages)
 ![Workflow](https://github.com/tideland/go-cells/actions/workflows/go.yml/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/tideland/go-cells)](https://goreportcard.com/report/tideland.dev/go/together)
 
