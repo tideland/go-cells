@@ -62,6 +62,16 @@ func TestEventPayload(t *testing.T) {
 	assert.NoError(err)
 	assert.Length(payloadOutB, 5)
 	assert.Equal(payloadOutB, []int{1, 2, 3, 4, 5})
+
+	var payloadOutC string
+	evt, err = mesh.NewEvent("test", "payload")
+	assert.NoError(err)
+	assert.Equal(evt.Topic(), "test")
+	assert.True(evt.HasPayload())
+	err = evt.Payload(&payloadOutC)
+	assert.NoError(err)
+	assert.Equal(payloadOutC, "payload")
+
 }
 
 // TestEventMarshaling verifies the event marshaling and unmarshaling.
