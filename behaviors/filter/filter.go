@@ -46,7 +46,9 @@ const (
 // BEHAVIOR
 //--------------------
 
-// Behavior
+// Behavior provides a behavior allowing to filter the stream of incomming
+// events in a user defined was. The way instantiating it defines if the
+// filter function decides if events are included or excluded.
 type Behavior struct {
 	filter FilterFunc
 	mode   mode
