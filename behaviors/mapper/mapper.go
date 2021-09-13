@@ -20,7 +20,7 @@ import (
 //--------------------
 
 // MapperFunc defines how incoming events are to map into outcomming event.
-type MapperFunc func(event *mesh.Event) (*mesh.Event, error)
+type MapperFunc func(evt *mesh.Event) (*mesh.Event, error)
 
 //--------------------
 // BEHAVIOR

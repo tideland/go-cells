@@ -33,6 +33,9 @@ The project already contains some standard behaviors, the number is still growin
 - **Evaluator** evaluates events based on a user-defined function which returns a rating.
 - **Filter** re-emits received events based on a user-defined filter. Those can be including
   or excluding.
+- **Mapper** allows to analyse events and map them into new one for emitting.
+- **One-Time** processes a user defined function only once for the first event, it will never
+  called again. Outgoing events can be emitted during processing.
 
 ## Contributors
 
