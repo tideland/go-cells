@@ -83,7 +83,7 @@ func TestEventMarshaling(t *testing.T) {
 	data, err := json.Marshal(evtIn)
 	assert.NoError(err)
 
-	evtOut, err := mesh.NewEvent("emppty")
+	evtOut, err := mesh.NewEvent("empty")
 	assert.NoError(err)
 	err = json.Unmarshal(data, &evtOut)
 	assert.NoError(err)
@@ -101,7 +101,7 @@ func TestEventMarshaling(t *testing.T) {
 	data, err = json.Marshal(evtIn)
 	assert.NoError(err)
 
-	evtOut, err = mesh.NewEvent("emppty")
+	evtOut, err = mesh.NewEvent("empty")
 	assert.NoError(err)
 	err = json.Unmarshal(data, &evtOut)
 	assert.NoError(err)
