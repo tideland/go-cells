@@ -22,8 +22,8 @@ import (
 //--------------------
 
 const (
-	TopicPairerMatch   = "pairer:match"
-	TopicPairerTimeout = "pairer:timeout"
+	TopicMatch   = "pairer:match"
+	TopicTimeout = "pairer:timeout"
 )
 
 //--------------------
@@ -92,10 +92,10 @@ func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error 
 			b.hit = nil
 			tickc = quitec
 			ticker.Stop()
-			out.Emit(TopicPairerMatch, pair)
+			out.Emit(TopicMatch, pair)
 		case <-tickc:
 			// Timeout!
-			out.Emit(TopicPairerTimeout)
+			out.Emit(TopicTimeout)
 			ticker.Stop()
 		}
 	}

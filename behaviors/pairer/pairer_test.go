@@ -45,7 +45,7 @@ func TestSuccess(t *testing.T) {
 		count := 0
 		tbe.Do(func(i int, eevt *mesh.Event) error {
 			switch evt.Topic() {
-			case pairer.TopicPairerMatch:
+			case pairer.TopicMatch:
 				count++
 				if count == 1 {
 					// Skip waiting for second.
@@ -59,7 +59,7 @@ func TestSuccess(t *testing.T) {
 					tbe.SetFail("pair event topic missmatch: %q <> %q", pair.First.Topic(), pair.Second.Topic())
 				}
 				tbe.SetSuccess()
-			case pairer.TopicPairerTimeout:
+			case pairer.TopicTimeout:
 				tbe.SetFail("no pairing received")
 			}
 			return nil
@@ -93,9 +93,9 @@ func TestFailOneHit(t *testing.T) {
 	// Testing.
 	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		switch evt.Topic() {
-		case pairer.TopicPairerTimeout:
+		case pairer.TopicTimeout:
 			tbe.SetSuccess()
-		case pairer.TopicPairerMatch:
+		case pairer.TopicMatch:
 			tbe.SetFail("pairing found")
 		}
 		return nil
@@ -123,7 +123,7 @@ func TestFailNoHit(t *testing.T) {
 	// Testing.
 	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		switch evt.Topic() {
-		case pairer.TopicPairerMatch, pairer.TopicPairerTimeout:
+		case pairer.TopicMatch, pairer.TopicTimeout:
 			tbe.SetFail("any pairer output wrong here")
 		}
 		return nil
