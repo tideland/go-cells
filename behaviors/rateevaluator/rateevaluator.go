@@ -38,11 +38,13 @@ type RaterFunc func(evt *mesh.Event) (bool, error)
 // contains the matching time, the duration from the last match to this
 // one, and the highest, lowest, and avaerage duration between matches.
 type Rate struct {
-	Time     time.Time
-	Duration time.Duration
-	High     time.Duration
-	Low      time.Duration
-	Average  time.Duration
+	Time             time.Time
+	CountMatching    int
+	CountNonMatching int
+	Duration         time.Duration
+	High             time.Duration
+	Low              time.Duration
+	Average          time.Duration
 }
 
 //--------------------
@@ -68,6 +70,8 @@ func New(matches RaterFunc, count int) *Behavior {
 // Go implements the mesh.Behavior interface.
 func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
 	last := time.Now()
+	countMatching := 0
+	countNonMatching := 0
 	durations := []time.Duration{}
 	for {
 		select {
@@ -77,6 +81,8 @@ func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error 
 			switch evt.Topic() {
 			case TopicReset:
 				last = time.Now()
+				countMatching = 0
+				countNonMatching = 0
 				durations = []time.Duration{}
 			default:
 				ok, err := b.matches(evt)
@@ -84,9 +90,11 @@ func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error 
 					return err
 				}
 				if !ok {
+					countNonMatching++
 					continue
 				}
 				// Recalculate rate with matching event.
+				countMatching++
 				current := evt.Timestamp()
 				duration := current.Sub(last)
 				last = current
@@ -108,11 +116,13 @@ func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error 
 				}
 				avg := total / time.Duration(len(durations))
 				out.Emit(TopicRate, Rate{
-					Time:     current,
-					Duration: duration,
-					High:     high,
-					Low:      low,
-					Average:  avg,
+					Time:             current,
+					CountMatching:    countMatching,
+					CountNonMatching: countNonMatching,
+					Duration:         duration,
+					High:             high,
+					Low:              low,
+					Average:          avg,
 				})
 			}
 		}
