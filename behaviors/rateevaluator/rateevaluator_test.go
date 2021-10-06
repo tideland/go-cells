@@ -33,9 +33,9 @@ func TestSuccess(t *testing.T) {
 	generator := generators.New(generators.FixedRand())
 	raterFunc := func(evt *mesh.Event) (bool, error) {
 		// Each topic starting with an 'a' fires the rater.
-		return strings.IndexRune(evt.Topic(), 'a') == 0
+		return strings.IndexRune(evt.Topic(), 'a') == 0, nil
 	}
-	behavior := rateevaluator.New(raterFunc)
+	behavior := rateevaluator.New(raterFunc, 10)
 	// Testing.
 	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		return nil
