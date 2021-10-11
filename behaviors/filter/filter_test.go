@@ -38,10 +38,10 @@ func TestIncludingSuccess(t *testing.T) {
 	// Testing.
 	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		if evt.Topic() == "!!!" {
-			tbe.SetSuccess()
+			tbe.SignalSuccess()
 		}
 		if len(evt.Topic()) > 5 {
-			tbe.SetFail("topic length of %q too long (> 5) for filter", evt.Topic())
+			tbe.SignalFail("topic length of %q too long (> 5) for filter", evt.Topic())
 		}
 		return nil
 	}
@@ -69,10 +69,10 @@ func TestExcludingSuccess(t *testing.T) {
 	// Testing.
 	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		if evt.Topic() == "!!!!!!" {
-			tbe.SetSuccess()
+			tbe.SignalSuccess()
 		}
 		if len(evt.Topic()) < 6 {
-			tbe.SetFail("topic length of %q too short (< 6) for filter", evt.Topic())
+			tbe.SignalFail("topic length of %q too short (< 6) for filter", evt.Topic())
 		}
 		return nil
 	}

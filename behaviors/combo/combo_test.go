@@ -66,7 +66,7 @@ func TestSuccess(t *testing.T) {
 				return err
 			}
 			if distance == 50 {
-				tbe.SetSuccess()
+				tbe.SignalSuccess()
 			}
 		}
 		return nil

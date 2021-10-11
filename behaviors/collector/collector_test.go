@@ -44,7 +44,7 @@ func TestSuccess(t *testing.T) {
 			err := evt.Payload(&l)
 			assert.NoError(err)
 			assert.Equal(l, 10)
-			tbe.SetSuccess()
+			tbe.SignalSuccess()
 		case collector.TopicResetDone:
 			return nil
 		}

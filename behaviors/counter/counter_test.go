@@ -53,7 +53,7 @@ func TestSuccess(t *testing.T) {
 			l := len(counters)
 			// 13 characters = 13 counters and 0 after a reset.
 			if l == 13 || l == 0 {
-				tbe.SetSuccess()
+				tbe.SignalSuccess()
 			}
 			return nil
 		default:

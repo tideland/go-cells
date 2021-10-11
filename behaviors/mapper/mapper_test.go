@@ -46,14 +46,14 @@ func TestSuccess(t *testing.T) {
 	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		switch evt.Topic() {
 		case "!!!":
-			tbe.SetSuccess()
+			tbe.SignalSuccess()
 		case "map":
 			var mapped []string
 			if err := evt.Payload(&mapped); err != nil {
-				tbe.SetFail("error accessing payload: %v", err)
+				tbe.SignalFail("error accessing payload: %v", err)
 			}
 			if strings.ToUpper(mapped[0]) != mapped[1] {
-				tbe.SetFail("payload not mapped: %v", mapped)
+				tbe.SignalFail("payload not mapped: %v", mapped)
 			}
 		}
 		return nil

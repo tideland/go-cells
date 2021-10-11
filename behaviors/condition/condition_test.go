@@ -42,7 +42,7 @@ func TestSuccess(t *testing.T) {
 	// Testing.
 	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		if evt.Topic() == "found-now" {
-			tbe.SetSuccess()
+			tbe.SignalSuccess()
 		}
 		return nil
 	}

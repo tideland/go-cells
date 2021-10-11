@@ -25,8 +25,8 @@ import (
 // TestbedEvaluator allows to store events received during evaluation.
 // Here it supports the interface EventSink.
 //
-// A success can be signaled with SetSuccess(), a failing with
-// SetFail(reason string, vs ...interface{}).
+// A success can be signaled with SignalSuccess(), a failing with
+// SignalFail(reason string, vs ...interface{}).
 type TestbedEvaluator struct {
 	EventSink
 
@@ -41,14 +41,26 @@ func newTestbedEvaluator(tb *Testbed) *TestbedEvaluator {
 	}
 }
 
-// SetSuccess signals a successful testing.
-func (tbe *TestbedEvaluator) SetSuccess() {
+// SignalSuccess signals a successful testing.
+func (tbe *TestbedEvaluator) SignalSuccess() {
 	tbe.tb.succeededc <- struct{}{}
 }
 
-// SetFail signals a failing testing together with a reason.
-func (tbe *TestbedEvaluator) SetFail(reason string, vs ...interface{}) {
+// SignalFail signals a failing testing together with a reason.
+func (tbe *TestbedEvaluator) SignalFail(reason string, vs ...interface{}) {
 	tbe.tb.failedc <- fmt.Sprintf(reason, vs...)
+}
+
+// Done returns true when the event signals that the testbed runner
+// is done.
+func (tbe *TestbedEvaluator) Done(evt *Event) bool {
+	return evt.Topic() == TopicTestbedDone
+}
+
+// String returns a testbed evaluator representation containing all
+// the topics of the sink.
+func (tbe *TestbedEvaluator) String() string {
+	return "TestbedEvaluator{" + tbe.EventSink.String() + "}"
 }
 
 // TestbedTester defines a function signature used for evaluating the
@@ -181,7 +193,9 @@ func (tbc *testbedCell) push(evt *Event) error {
 
 // backend runs the behavior to test.
 func (tbc *testbedCell) backend() {
-	if err := tbc.behavior.Go(tbc, tbc, tbc); err != nil {
+	// Execute the behavior.
+	err := tbc.behavior.Go(tbc, tbc, tbc)
+	if err != nil {
 		// Notify subscribers about error.
 		tbc.Emit(TopicTestbedError, PayloadCellError{
 			CellName: tbc.Name(),
@@ -268,8 +282,11 @@ func NewTestbed(behavior Behavior, tester TestbedTester) *Testbed {
 }
 
 // Go runs the testbed rzbber and waits until test ends or a timeout.
-func (tb *Testbed) Go(runner TestbedRunner, timeout time.Duration) error {
-	go runner(newTestbedEmitter(tb))
+func (tb *Testbed) Go(run TestbedRunner, timeout time.Duration) error {
+	go func() {
+		run(newTestbedEmitter(tb))
+		tb.cell.Emit(TopicTestbedDone)
+	}()
 	return tb.wait(timeout)
 }
 

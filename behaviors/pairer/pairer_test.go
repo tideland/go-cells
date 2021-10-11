@@ -53,14 +53,14 @@ func TestSuccess(t *testing.T) {
 				}
 				var pair pairer.Pair
 				if err := evt.Payload(&pair); err != nil {
-					tbe.SetFail("event payload is no pair: %v", evt)
+					tbe.SignalFail("event payload is no pair: %v", evt)
 				}
 				if pair.First.Topic() != pair.Second.Topic() {
-					tbe.SetFail("pair event topic missmatch: %q <> %q", pair.First.Topic(), pair.Second.Topic())
+					tbe.SignalFail("pair event topic missmatch: %q <> %q", pair.First.Topic(), pair.Second.Topic())
 				}
-				tbe.SetSuccess()
+				tbe.SignalSuccess()
 			case pairer.TopicPairerTimeout:
-				tbe.SetFail("no pairing received")
+				tbe.SignalFail("no pairing received")
 			}
 			return nil
 		})
@@ -94,9 +94,9 @@ func TestFailOneHit(t *testing.T) {
 	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		switch evt.Topic() {
 		case pairer.TopicPairerTimeout:
-			tbe.SetSuccess()
+			tbe.SignalSuccess()
 		case pairer.TopicPairerMatch:
-			tbe.SetFail("pairing found")
+			tbe.SignalFail("pairing found")
 		}
 		return nil
 	}
@@ -124,7 +124,7 @@ func TestFailNoHit(t *testing.T) {
 	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		switch evt.Topic() {
 		case pairer.TopicPairerMatch, pairer.TopicPairerTimeout:
-			tbe.SetFail("any pairer output wrong here")
+			tbe.SignalFail("any pairer output wrong here")
 		}
 		return nil
 	}

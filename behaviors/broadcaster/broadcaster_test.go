@@ -33,7 +33,7 @@ func TestSuccess(t *testing.T) {
 	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		switch evt.Topic() {
 		case "done":
-			tbe.SetSuccess()
+			tbe.SignalSuccess()
 		}
 		return nil
 	}

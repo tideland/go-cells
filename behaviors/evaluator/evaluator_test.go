@@ -42,19 +42,19 @@ func TestSuccess(t *testing.T) {
 		case evaluator.TopicEvaluationDone:
 			var evaluation evaluator.Evaluation
 			if err := evt.Payload(&evaluation); err != nil {
-				tbe.SetFail("can not retrieve evaluation payload: %v", err)
+				tbe.SignalFail("can not retrieve evaluation payload: %v", err)
 			}
 			if evaluation.Count != 10000 {
-				tbe.SetFail("evaluation count is wrong: %d", evaluation.Count)
+				tbe.SignalFail("evaluation count is wrong: %d", evaluation.Count)
 			}
 			if evaluation.MinRating != 3.0 {
-				tbe.SetFail("evaluation min rating is wrong: %f", evaluation.MinRating)
+				tbe.SignalFail("evaluation min rating is wrong: %f", evaluation.MinRating)
 			}
 			if evaluation.MaxRating != 8.0 {
-				tbe.SetFail("evaluation max rating is wrong: %f", evaluation.MaxRating)
+				tbe.SignalFail("evaluation max rating is wrong: %f", evaluation.MaxRating)
 			}
 		case evaluator.TopicResetDone:
-			tbe.SetSuccess()
+			tbe.SignalSuccess()
 		}
 		return nil
 	}
@@ -87,12 +87,12 @@ func TestFail(t *testing.T) {
 		if evt.Topic() == mesh.TopicTestbedError {
 			var cellError mesh.PayloadCellError
 			if err := evt.Payload(&cellError); err != nil {
-				tbe.SetFail("invalid payload")
+				tbe.SignalFail("invalid payload")
 			}
 			if cellError.Error != "ouch" {
-				tbe.SetFail("invalid error: %s", cellError.Error)
+				tbe.SignalFail("invalid error: %s", cellError.Error)
 			}
-			tbe.SetSuccess()
+			tbe.SignalSuccess()
 			return nil
 		}
 		return nil

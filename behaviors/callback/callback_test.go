@@ -48,7 +48,7 @@ func TestSuccess(t *testing.T) {
 			countB++
 		}
 		if countA == countB && countA == count {
-			tbe.SetSuccess()
+			tbe.SignalSuccess()
 		}
 		return nil
 	}

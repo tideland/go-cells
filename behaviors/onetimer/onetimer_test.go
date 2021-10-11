@@ -40,9 +40,9 @@ func TestSuccess(t *testing.T) {
 	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		switch evt.Topic() {
 		case "a":
-			tbe.SetSuccess()
+			tbe.SignalSuccess()
 		case "b", "c":
-			tbe.SetFail("received invalid events")
+			tbe.SignalFail("received invalid events")
 		}
 		return nil
 	}

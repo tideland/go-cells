@@ -42,7 +42,7 @@ func TestSuccess(t *testing.T) {
 	// Test evaluation.
 	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
 		if evt.Topic() == "length-ok" {
-			tbe.SetSuccess()
+			tbe.SignalSuccess()
 		}
 		return nil
 	}

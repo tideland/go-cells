@@ -12,6 +12,8 @@ package mesh // import "tideland.dev/go/cells/mesh"
 //--------------------
 
 import (
+	"fmt"
+	"strings"
 	"time"
 )
 
@@ -45,6 +47,8 @@ type EventSinkChanger interface {
 
 // EventSinkReader can be used to read the events in a sink.
 type EventSinkReader interface {
+	fmt.Stringer
+
 	// Len returns the number of stored events.
 	Len() int
 
@@ -62,6 +66,10 @@ type EventSinkReader interface {
 	Do(do EventSinkDoFunc) error
 }
 
+//--------------------
+// EVENT SINK
+//--------------------
+
 // EventSink combines changer and reader. It stores a number of ordered events by
 // adding them at the end. To be used in behaviors for collecting sets of events
 // and operate on them.
@@ -69,10 +77,6 @@ type EventSink interface {
 	EventSinkChanger
 	EventSinkReader
 }
-
-//--------------------
-// EVENT SINK
-//--------------------
 
 // eventSink stores a number of ordered events by adding them at the end. To
 // be used in behaviors for collecting sets of events and operate on them.
@@ -182,6 +186,16 @@ func (s *eventSink) Do(do EventSinkDoFunc) error {
 		}
 	}
 	return nil
+}
+
+// String prints the topics inside the sink.
+func (s *eventSink) String() string {
+	var topics []string
+	s.Do(func(i int, evt *Event) error {
+		topics = append(topics, "\""+evt.Topic()+"\"")
+		return nil
+	})
+	return "[" + strings.Join(topics, " ") + "]"
 }
 
 //--------------------

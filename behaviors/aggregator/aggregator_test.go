@@ -51,7 +51,7 @@ func TestAggregatorBehavior(t *testing.T) {
 				return err
 			}
 			if len(words) != count+1 {
-				tbe.SetFail("invalid length of aggregated words: %d", len(words))
+				tbe.SignalFail("invalid length of aggregated words: %d", len(words))
 				return nil
 			}
 		case aggregator.TopicResetDone:
@@ -60,12 +60,12 @@ func TestAggregatorBehavior(t *testing.T) {
 				return err
 			}
 			if len(words) != 1 {
-				tbe.SetFail("invalid length of resetted words: %d", len(words))
+				tbe.SignalFail("invalid length of resetted words: %d", len(words))
 				return nil
 			}
 		}
 		if tbe.Len() == 2 {
-			tbe.SetSuccess()
+			tbe.SignalSuccess()
 		}
 		return nil
 	}
