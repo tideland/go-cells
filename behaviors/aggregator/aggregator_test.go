@@ -41,36 +41,28 @@ func TestAggregatorBehavior(t *testing.T) {
 		return words, nil
 	}
 	behavior := aggregator.New(initializer, aggregatorFunc)
-	// Testing.
-	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		tbe.Push(evt)
-		switch evt.Topic() {
-		case aggregator.TopicAggregateDone:
-			var words map[string]bool
-			if err := evt.Payload(&words); err != nil {
-				return err
-			}
-			if len(words) != count+1 {
-				tbe.SignalFail("invalid length of aggregated words: %d", len(words))
-				return nil
-			}
-		case aggregator.TopicResetDone:
-			var words map[string]bool
-			if err := evt.Payload(&words); err != nil {
-				return err
-			}
-			if len(words) != 1 {
-				tbe.SignalFail("invalid length of resetted words: %d", len(words))
-				return nil
-			}
-		}
-		if tbe.Len() == 2 {
-			tbe.SignalSuccess()
-		}
-		return nil
-	}
 	// Run tests.
-	tb := mesh.NewTestbed(behavior, test)
+	tb := mesh.NewTestbed(
+		behavior,
+		func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) {
+			tbe.Push(evt)
+			switch evt.Topic() {
+			case aggregator.TopicAggregateDone:
+				var words map[string]bool
+				if err := evt.Payload(&words); err != nil {
+					tbe.SignalError(err)
+				}
+				tbe.Assert(len(words) == count+1, "invalid length of aggregated words: %d", len(words))
+			case aggregator.TopicResetDone:
+				var words map[string]bool
+				if err := evt.Payload(&words); err != nil {
+					tbe.SignalError(err)
+				}
+				tbe.Assert(len(words) == 1, "invalid length of resetted words: %d", len(words))
+			}
+		},
+		nil,
+	)
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < count; i++ {
 			topic := strconv.Itoa(i)
