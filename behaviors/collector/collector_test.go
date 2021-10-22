@@ -42,7 +42,7 @@ func TestSuccess(t *testing.T) {
 			tbe.Push(evt)
 		},
 		func(tbe *mesh.TestbedEvaluator) {
-			tbe.AssertRetry(func() bool { return tbe.Len() == 2 }, "assert 2 collected events: %v", tbe)
+			tbe.AssertRetry(func() bool { return tbe.Len() == 2 }, "not yet all events emitted")
 			evt, ok := tbe.Peek(0)
 			tbe.Assert(ok, "first event missing")
 			tbe.Assert(evt.Topic() == "length", "topic not equal 'length': %v", evt.Topic())
