@@ -42,9 +42,6 @@ func TestSuccess(t *testing.T) {
 	// Run tests.
 	tb := mesh.NewTestbed(
 		behavior,
-		func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) {
-			tbe.Push(evt)
-		},
 		func(tbe *mesh.TestbedEvaluator) {
 			tbe.AssertRetry(func() bool { return tbe.Len() > 0 }, "collected events have to be at least 1: %d", tbe.Len())
 

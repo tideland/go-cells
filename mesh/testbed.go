@@ -19,7 +19,7 @@ import (
 )
 
 //--------------------
-// TESTBED TESTER
+// TESTBED EVALUATOR
 //--------------------
 
 // TestbedEvaluator allows to store events received during evaluation.
@@ -41,17 +41,14 @@ func newTestbedEvaluator(tb *Testbed) *TestbedEvaluator {
 	}
 }
 
-// Assert tests if an assertion is true, otherwise it segnals a
-// failing test.
-func (tbe *TestbedEvaluator) Assert(assertion bool, reason string, vs ...interface{}) {
-	if assertion {
-		return
-	}
-	tbe.tb.failedc <- fmt.Sprintf(reason, vs...)
+// WaitFor waits until the given function returns true. It runs the function up to 5 times
+// with growing pauses inbetween. If the final call returns false the test fails.
+func (tbe *TestbedEvaluator) WaitFor(assertion func() bool) {
+	tbe.AssertRetry(assertion, "waitong failed")
 }
 
-// AssertRetry tests 5 times with pauses if an assertion is true, otherwise it segnals a
-// failing test.
+// AssertRetry waits until the given function returns true. It runs the function up to 5 times
+// with growing pauses inbetween. If the final call returns false the test fails.
 func (tbe *TestbedEvaluator) AssertRetry(assertion func() bool, reason string, vs ...interface{}) {
 	duration := 2 * time.Millisecond
 	for i := 0; i < 5; i++ {
@@ -61,6 +58,15 @@ func (tbe *TestbedEvaluator) AssertRetry(assertion func() bool, reason string, v
 		time.Sleep(duration)
 
 		duration = duration * 2
+	}
+	tbe.tb.failedc <- fmt.Sprintf(reason, vs...)
+}
+
+// Assert tests if an assertion is true, otherwise it segnals a
+// failing test.
+func (tbe *TestbedEvaluator) Assert(assertion bool, reason string, vs ...interface{}) {
+	if assertion {
+		return
 	}
 	tbe.tb.failedc <- fmt.Sprintf(reason, vs...)
 }
@@ -84,14 +90,9 @@ func (tbe *TestbedEvaluator) String() string {
 // and emitting all events used by the tested behaviors as input.
 type TestbedRunner func(out Emitter)
 
-// TestbedOutTester defines a function signature used for evaluating the
-// events emitted by the tested behavior. Success or failing can be
-// sugnalled via the given testbed evaluator.
-type TestbedOutTester func(tbe *TestbedEvaluator, evt *Event)
-
-// TestbedEndTest defines a function signature used for checking the final
+// TestbedTest defines a function signature used for checking the final
 // success when the testbed runner has sent all test input events.
-type TestbedEndTester func(tbe *TestbedEvaluator)
+type TestbedTester func(tbe *TestbedEvaluator)
 
 //--------------------
 // TESTBED MESH
@@ -190,7 +191,7 @@ func (tbc *testbedCell) Emit(topic string, payloads ...interface{}) error {
 // EmitEvent implements mesh.Emitter and evaluates the event.
 func (tbc *testbedCell) EmitEvent(evt *Event) error {
 	evt.appendEmitter(tbc.Name())
-	tbc.tb.testOut(tbc.tb.evaluator, evt)
+	tbc.tb.evaluator.Push(evt)
 	return nil
 }
 
@@ -198,7 +199,7 @@ func (tbc *testbedCell) EmitEvent(evt *Event) error {
 func (tbc *testbedCell) push(evt *Event) error {
 	select {
 	case <-tbc.ctx.Done():
-		// Ignore as test result has been defined otherwhere.
+		// Ignore as test result.
 		return nil
 	case tbc.inc <- evt:
 		return nil
@@ -271,8 +272,7 @@ type Testbed struct {
 	ctx        context.Context
 	cancel     func()
 	evaluator  *TestbedEvaluator
-	testOut    TestbedOutTester
-	testEnd    TestbedEndTester
+	test       TestbedTester
 	cell       *testbedCell
 	succeededc chan struct{}
 	failedc    chan string
@@ -281,17 +281,12 @@ type Testbed struct {
 
 // NewTestbed starts a test cell with the given behavior. The tester function
 // will be called for each event emitted by the behavior.
-func NewTestbed(
-	behavior Behavior,
-	testOut TestbedOutTester,
-	testEnd TestbedEndTester,
-) *Testbed {
+func NewTestbed(behavior Behavior, tester TestbedTester) *Testbed {
 	ctx, cancel := context.WithCancel(context.Background())
 	tb := &Testbed{
 		ctx:        ctx,
 		cancel:     cancel,
-		testOut:    testOut,
-		testEnd:    testEnd,
+		test:       tester,
 		succeededc: make(chan struct{}, 1),
 		failedc:    make(chan string, 1),
 		errc:       make(chan error, 1),
@@ -309,10 +304,7 @@ func (tb *Testbed) Go(run TestbedRunner, timeout time.Duration) error {
 		tbe := newTestbedEmitter(tb)
 
 		run(tbe)
-
-		if tb.testEnd != nil {
-			tb.testEnd(tb.evaluator)
-		}
+		tb.test(tb.evaluator)
 
 		tb.succeededc <- struct{}{}
 	}()

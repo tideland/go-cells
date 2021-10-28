@@ -42,9 +42,6 @@ func TestSuccess(t *testing.T) {
 	// Run tests.
 	tb := mesh.NewTestbed(
 		behavior,
-		func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) {
-			tbe.Push(evt)
-		},
 		func(tbe *mesh.TestbedEvaluator) {
 			tbe.AssertRetry(func() bool { return tbe.Len() == 1 }, "not yet all events emitted")
 			evt, ok := tbe.First()

@@ -12,7 +12,6 @@ package mesh_test // import "tideland.dev/go/cells/mesh"
 //--------------------
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -43,9 +42,6 @@ func TestTestbedSuccess(t *testing.T) {
 	// Run tests.
 	tb := mesh.NewTestbed(
 		behavior,
-		func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) {
-			tbe.Push(evt)
-		},
 		func(tbe *mesh.TestbedEvaluator) {
 			tbe.AssertRetry(func() bool { return tbe.Len() == 3 }, "collected events not 3: %d", tbe.Len())
 		},
@@ -76,7 +72,6 @@ func TestTestbedFail(t *testing.T) {
 	// Run tests.
 	tb := mesh.NewTestbed(
 		behavior,
-		func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) {},
 		func(tbe *mesh.TestbedEvaluator) {
 			tbe.Assert(false, "must fail")
 		},
@@ -128,9 +123,6 @@ func TestTestbedMesh(t *testing.T) {
 	// Run tests.
 	tb := mesh.NewTestbed(
 		behavior,
-		func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) {
-			tbe.Push(evt)
-		},
 		func(tbe *mesh.TestbedEvaluator) {
 			tbe.AssertRetry(func() bool { return tbe.Len() == 5 }, "not all events processed: %v", tbe)
 		},
@@ -143,47 +135,6 @@ func TestTestbedMesh(t *testing.T) {
 		out.Emit("emitter")
 	}, time.Second)
 	assert.NoError(err)
-}
-
-// TestTestbedError verifies the error handling of the Testbed.
-func TestTestbedError(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
-	failer := func(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
-		for {
-			select {
-			case <-cell.Context().Done():
-				return nil
-			case evt := <-in.Pull():
-				switch evt.Topic() {
-				case "go":
-					out.Emit("ok")
-				default:
-					// Fail when topic is unknown.
-					out.Emit("fail")
-				}
-			}
-		}
-	}
-	behavior := mesh.BehaviorFunc(failer)
-	// Run tests.
-	tb := mesh.NewTestbed(
-		behavior,
-		func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) {
-			if evt.Topic() == "fail" {
-				tbe.SignalError(errors.New("ouch"))
-			}
-		},
-		nil,
-	)
-	err := tb.Go(func(out mesh.Emitter) {
-		out.Emit("go")
-		out.Emit("go")
-		out.Emit("go")
-		out.Emit("dunno!")
-		out.Emit("go")
-		out.Emit("go")
-	}, time.Second)
-	assert.ErrorContains(err, "test error: ouch")
 }
 
 // EOF

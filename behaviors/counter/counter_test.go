@@ -41,27 +41,31 @@ func TestSuccess(t *testing.T) {
 		return counters, nil
 	}
 	behavior := counter.New(counteval)
-	// Testing.
-	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		switch evt.Topic() {
-		case counter.TopicCountersDone:
-			var counters map[string]int
-			err := evt.Payload(&counters)
-			if err != nil {
-				return err
+	// Run tests.
+	tb := mesh.NewTestbed(
+		behavior,
+		func(tbe *mesh.TestbedEvaluator) {
+			clen := func(evt *mesh.Event) int {
+				var counters map[string]int
+				if err := evt.Payload(&counters); err != nil {
+					return -1
+				}
+				return len(counters)
 			}
-			l := len(counters)
-			// 13 characters = 13 counters and 0 after a reset.
-			if l == 13 || l == 0 {
-				tbe.SignalSuccess()
-			}
-			return nil
-		default:
-			return nil
-		}
-	}
-	// Run test.
-	tb := mesh.NewTestbed(behavior, test)
+			tbe.AssertRetry(func() bool { return tbe.Len() == 3 }, "wait for three emitted events failed")
+			evt, ok := tbe.Peek(0)
+			tbe.Assert(ok, "retrieving first event failed")
+			tbe.Assert(evt.Topic() == counter.TopicCountersDone, "first topic failed: %v", evt)
+			tbe.Assert(clen(evt) == 13, "not 13 counters after first run: %v", evt)
+			evt, ok = tbe.Peek(1)
+			tbe.Assert(ok, "retrieving second event failed")
+			tbe.Assert(evt.Topic() == counter.TopicResetDone, "second topic failed: %v", evt)
+			evt, ok = tbe.Peek(2)
+			tbe.Assert(ok, "retrieving third event failed")
+			tbe.Assert(evt.Topic() == counter.TopicCountersDone, "third topic failed: %v", evt)
+			tbe.Assert(clen(evt) == 0, "not 0 counters after third run: %v", evt)
+		},
+	)
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < 50; i++ {
 			topic := generator.OneStringOf(topics...)

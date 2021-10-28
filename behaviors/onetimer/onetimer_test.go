@@ -1,6 +1,6 @@
-// Tideland Go Cells - Behaviors - Unit Tests - Once
+// Tideland Go Cells - Behaviors - Unit Tests - One-Timer
 //
-// Copyright (C) 2010-2017 Frank Mueller / Tideland / Oldenburg / Germany
+// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
@@ -36,18 +36,16 @@ func TestSuccess(t *testing.T) {
 		return nil
 	}
 	behavior := onetimer.New(oneTime)
-	// Testing.
-	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		switch evt.Topic() {
-		case "a":
-			tbe.SignalSuccess()
-		case "b", "c":
-			tbe.SignalFail("received invalid events")
-		}
-		return nil
-	}
-	// Run test.
-	tb := mesh.NewTestbed(behavior, test)
+	// Run tests.
+	tb := mesh.NewTestbed(
+		behavior,
+		func(tbe *mesh.TestbedEvaluator) {
+			// Test three times as those could be emitted later.
+			tbe.AssertRetry(func() bool { return tbe.Len() == 1 }, "invalid number of emitted events: %v", tbe)
+			tbe.AssertRetry(func() bool { return tbe.Len() == 1 }, "invalid number of emitted events: %v", tbe)
+			tbe.AssertRetry(func() bool { return tbe.Len() == 1 }, "invalid number of emitted events: %v", tbe)
+		},
+	)
 	err := tb.Go(func(out mesh.Emitter) {
 		out.Emit("a")
 		out.Emit("b")

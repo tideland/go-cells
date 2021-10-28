@@ -42,30 +42,25 @@ func TestSuccess(t *testing.T) {
 		return mesh.NewEvent(evt.Topic(), out)
 	}
 	behavior := mapper.New(mapperFunc)
-	// Testing.
-	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		switch evt.Topic() {
-		case "!!!":
-			tbe.SignalSuccess()
-		case "map":
-			var mapped []string
-			if err := evt.Payload(&mapped); err != nil {
-				tbe.SignalFail("error accessing payload: %v", err)
-			}
-			if strings.ToUpper(mapped[0]) != mapped[1] {
-				tbe.SignalFail("payload not mapped: %v", mapped)
-			}
-		}
-		return nil
-	}
-	// Run test.
-	tb := mesh.NewTestbed(behavior, test)
+	// Run tests.
+	tb := mesh.NewTestbed(
+		behavior,
+		func(tbe *mesh.TestbedEvaluator) {
+			tbe.WaitFor(func() bool { return tbe.Len() == 1000 })
+			tbe.Do(func(i int, evt *mesh.Event) error {
+				var mapped []string
+				err := evt.Payload(&mapped)
+				tbe.Assert(err == nil, "error accessing payload: %v", err)
+				tbe.Assert(strings.ToUpper(mapped[0]) == mapped[1], "payload %d not mapped: %v", i, mapped)
+				return nil
+			})
+		},
+	)
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < 1000; i++ {
 			orig := generator.Word()
 			out.Emit("map", []string{orig, orig})
 		}
-		out.Emit("!!!")
 	}, time.Second)
 	assert.NoError(err)
 }

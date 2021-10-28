@@ -32,9 +32,6 @@ func TestSuccess(t *testing.T) {
 	// Run tests.
 	tb := mesh.NewTestbed(
 		behavior,
-		func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) {
-			tbe.Push(evt)
-		},
 		func(tbe *mesh.TestbedEvaluator) {
 			tbe.AssertRetry(func() bool { return tbe.Len() == 3 }, "broadcasted events not 3: %v", tbe)
 		},

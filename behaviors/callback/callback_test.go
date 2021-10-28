@@ -30,8 +30,6 @@ import (
 func TestSuccess(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	count := 50
-	countA := 0
-	countB := 0
 	callbackA := func(evt *mesh.Event, out mesh.Emitter) error {
 		return out.Emit("a")
 	}
@@ -39,21 +37,25 @@ func TestSuccess(t *testing.T) {
 		return out.Emit("b")
 	}
 	behavior := callback.New(callbackA, callbackB)
-	// Testing.
-	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		switch evt.Topic() {
-		case "a":
-			countA++
-		case "b":
-			countB++
-		}
-		if countA == countB && countA == count {
-			tbe.SignalSuccess()
-		}
-		return nil
-	}
-	tb := mesh.NewTestbed(behavior, test)
 	// Run tests.
+	tb := mesh.NewTestbed(
+		behavior,
+		func(tbe *mesh.TestbedEvaluator) {
+			countA := 0
+			countB := 0
+			tbe.Do(func(i int, evt *mesh.Event) error {
+				switch evt.Topic() {
+				case "a":
+					countA++
+				case "b":
+					countB++
+				}
+				return nil
+			})
+			tbe.Assert(countA == count, "counter A is wrong: %d", countA)
+			tbe.Assert(countB == count, "counter B is wrong: %d", countB)
+		},
+	)
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < count; i++ {
 			topic := strconv.Itoa(i)
