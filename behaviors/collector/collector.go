@@ -20,10 +20,9 @@ import (
 //--------------------
 
 const (
-	TopicProcess        = "process!"
-	TopicProcessingDone = "processing-done"
-	TopicReset          = "reset!"
-	TopicResetDone      = "reset-done"
+	TopicProcess   = "process!"
+	TopicReset     = "reset!"
+	TopicResetDone = "reset-done"
 )
 
 //--------------------
@@ -37,7 +36,10 @@ type CollectionProcessorFunc func(r mesh.EventSinkReader) (*mesh.Event, error)
 // BEHAVIOR
 //--------------------
 
-// Behavior collects a number events for processing on demand.
+// Behavior collects a wanted number of events. If the number grows too much the oldest
+// one will be deleted. When it's receiving an event with "process!" topic it calls the
+// process function and emits the result event. In case of a "reset!" topic the collection
+// will be dropped to zero.
 type Behavior struct {
 	max     int
 	sink    mesh.EventSink
@@ -46,9 +48,7 @@ type Behavior struct {
 
 var _ mesh.Behavior = (*Behavior)(nil)
 
-// New collects geven maximum number of events. If the number gets too large the first
-// one will be deleted. After "process!" topic it processes it and emits the result as
-// event. After "reset!" topic the collection is dropped to zero.
+// New creates a new collector behavior instance.
 func New(max int, process CollectionProcessorFunc) *Behavior {
 	return &Behavior{
 		max:     max,

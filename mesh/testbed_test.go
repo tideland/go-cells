@@ -12,7 +12,6 @@ package mesh_test // import "tideland.dev/go/cells/mesh"
 //--------------------
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -40,17 +39,13 @@ func TestTestbedSuccess(t *testing.T) {
 		}
 	}
 	behavior := mesh.BehaviorFunc(forwarder)
-	// Test evaluation.
-	eval := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		tbe.Push(evt)
-		if tbe.Len() == 3 {
-			// Done.
-			tbe.SetSuccess()
-		}
-		return nil
-	}
 	// Run tests.
-	tb := mesh.NewTestbed(behavior, eval)
+	tb := mesh.NewTestbed(
+		behavior,
+		func(tbe *mesh.TestbedEvaluator) {
+			tbe.AssertRetry(func() bool { return tbe.Len() == 3 }, "collected events not 3: %d", tbe.Len())
+		},
+	)
 	err := tb.Go(func(out mesh.Emitter) {
 		out.Emit("one")
 		out.Emit("two")
@@ -74,22 +69,19 @@ func TestTestbedFail(t *testing.T) {
 		}
 	}
 	behavior := mesh.BehaviorFunc(forwarder)
-	// Test evaluation.
-	eval := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		if evt.Topic() == "fail" {
-			tbe.SetFail("received failure event")
-		}
-		return nil
-	}
 	// Run tests.
-	tb := mesh.NewTestbed(behavior, eval)
+	tb := mesh.NewTestbed(
+		behavior,
+		func(tbe *mesh.TestbedEvaluator) {
+			tbe.Assert(false, "must fail")
+		},
+	)
 	err := tb.Go(func(out mesh.Emitter) {
 		out.Emit("one")
 		out.Emit("two")
 		out.Emit("three")
-		out.Emit("fail")
 	}, time.Second)
-	assert.ErrorContains(err, "test failed: received failure event")
+	assert.ErrorContains(err, "test failed: must fail")
 }
 
 // TestTestbedMesh verifies the Mesh stubbing of the testbed.
@@ -123,80 +115,26 @@ func TestTestbedMesh(t *testing.T) {
 					emtr, err := cell.Mesh().Emitter("anything")
 					assert.ErrorContains(err, "cell 'anything' does not exist")
 					assert.Nil(emtr)
-				case "done":
-					out.EmitEvent(evt)
 				}
 			}
 		}
 	}
 	behavior := mesh.BehaviorFunc(mesher)
-	// Test evaluation.
-	eval := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		tbe.Push(evt)
-		if tbe.Len() == 6 {
-			tbe.SetSuccess()
-		}
-		return nil
-	}
 	// Run tests.
-	tb := mesh.NewTestbed(behavior, eval)
+	tb := mesh.NewTestbed(
+		behavior,
+		func(tbe *mesh.TestbedEvaluator) {
+			tbe.AssertRetry(func() bool { return tbe.Len() == 5 }, "not all events processed: %v", tbe)
+		},
+	)
 	err := tb.Go(func(out mesh.Emitter) {
 		out.Emit("go")
 		out.Emit("subscribe")
 		out.Emit("unsubscribe")
 		out.Emit("emit")
 		out.Emit("emitter")
-		out.Emit("done")
 	}, time.Second)
 	assert.NoError(err)
-}
-
-// TestTestbedError verifies the error handling of the Testbed.
-func TestTestbedError(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
-	failer := func(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
-		for {
-			select {
-			case <-cell.Context().Done():
-				return nil
-			case evt := <-in.Pull():
-				switch evt.Topic() {
-				case "go":
-					out.Emit("ok")
-				case "done":
-					out.Emit("done")
-				default:
-					// Fail when topic is unknown.
-					out.Emit("fail")
-				}
-			}
-		}
-	}
-	behavior := mesh.BehaviorFunc(failer)
-	// Test evaluation.
-	eval := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		switch evt.Topic() {
-		case "done":
-			tbe.SetSuccess()
-			return nil
-		case "fail":
-			return errors.New("ouch")
-		default:
-			return nil
-		}
-	}
-	// Run tests.
-	tb := mesh.NewTestbed(behavior, eval)
-	err := tb.Go(func(out mesh.Emitter) {
-		out.Emit("go")
-		out.Emit("go")
-		out.Emit("go")
-		out.Emit("dunno!")
-		out.Emit("go")
-		out.Emit("go")
-		out.Emit("done")
-	}, time.Second)
-	assert.ErrorContains(err, "test error: ouch")
 }
 
 // EOF

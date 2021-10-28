@@ -29,21 +29,17 @@ import (
 func TestSuccess(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	behavior := broadcaster.New()
-	// Test behavior, pretty simple as the evaluator tests all emitted events.
-	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		switch evt.Topic() {
-		case "done":
-			tbe.SetSuccess()
-		}
-		return nil
-	}
 	// Run tests.
-	tb := mesh.NewTestbed(behavior, test)
+	tb := mesh.NewTestbed(
+		behavior,
+		func(tbe *mesh.TestbedEvaluator) {
+			tbe.AssertRetry(func() bool { return tbe.Len() == 3 }, "broadcasted events not 3: %v", tbe)
+		},
+	)
 	err := tb.Go(func(out mesh.Emitter) {
 		out.Emit("one")
 		out.Emit("two")
 		out.Emit("three")
-		out.Emit("done")
 	}, time.Second)
 	assert.NoError(err)
 }

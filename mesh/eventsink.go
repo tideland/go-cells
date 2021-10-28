@@ -12,6 +12,9 @@ package mesh // import "tideland.dev/go/cells/mesh"
 //--------------------
 
 import (
+	"fmt"
+	"strings"
+	"sync"
 	"time"
 )
 
@@ -45,6 +48,8 @@ type EventSinkChanger interface {
 
 // EventSinkReader can be used to read the events in a sink.
 type EventSinkReader interface {
+	fmt.Stringer
+
 	// Len returns the number of stored events.
 	Len() int
 
@@ -62,6 +67,10 @@ type EventSinkReader interface {
 	Do(do EventSinkDoFunc) error
 }
 
+//--------------------
+// EVENT SINK
+//--------------------
+
 // EventSink combines changer and reader. It stores a number of ordered events by
 // adding them at the end. To be used in behaviors for collecting sets of events
 // and operate on them.
@@ -70,13 +79,10 @@ type EventSink interface {
 	EventSinkReader
 }
 
-//--------------------
-// EVENT SINK
-//--------------------
-
 // eventSink stores a number of ordered events by adding them at the end. To
 // be used in behaviors for collecting sets of events and operate on them.
 type eventSink struct {
+	mux    sync.RWMutex
 	max    int
 	events []*Event
 }
@@ -96,6 +102,8 @@ func NewEventSink(max int, evts ...*Event) EventSink {
 
 // Push adds an event to the end of the sink and returns the new size.
 func (s *eventSink) Push(evt *Event) int {
+	s.mux.Lock()
+	defer s.mux.Unlock()
 	s.events = append(s.events, evt)
 	if s.max > 0 && len(s.events) > s.max {
 		s.events = s.events[1:]
@@ -106,6 +114,8 @@ func (s *eventSink) Push(evt *Event) int {
 // Pop retrieves and removes the last event from the sink
 // and also returns the new length.
 func (s *eventSink) Pop() (*Event, int) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
 	if len(s.events) == 0 {
 		return nil, 0
 	}
@@ -117,6 +127,8 @@ func (s *eventSink) Pop() (*Event, int) {
 
 // Unshift adds an event to the begin of the sink and returns the new size.
 func (s *eventSink) Unshift(evt *Event) int {
+	s.mux.Lock()
+	defer s.mux.Unlock()
 	s.events = append([]*Event{evt}, s.events...)
 	if s.max > 0 && len(s.events) > s.max {
 		s.events = s.events[:len(s.events)-1]
@@ -127,6 +139,8 @@ func (s *eventSink) Unshift(evt *Event) int {
 // Shift returns and removes the first event of the sink
 // and also returns the new length.
 func (s *eventSink) Shift() (*Event, int) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
 	if len(s.events) == 0 {
 		return nil, 0
 	}
@@ -139,6 +153,8 @@ func (s *eventSink) Shift() (*Event, int) {
 // First allows a look at the first event of the sink if it
 // exists. Otherwise nil and false will be returned.
 func (s *eventSink) First() (*Event, bool) {
+	s.mux.RLock()
+	defer s.mux.RUnlock()
 	if len(s.events) < 1 {
 		return nil, false
 	}
@@ -148,6 +164,8 @@ func (s *eventSink) First() (*Event, bool) {
 // Last allows a look at the last event of the sink if it
 // exists. Otherwise nil and false will be returned.
 func (s *eventSink) Last() (*Event, bool) {
+	s.mux.RLock()
+	defer s.mux.RUnlock()
 	if len(s.events) < 1 {
 		return nil, false
 	}
@@ -157,6 +175,8 @@ func (s *eventSink) Last() (*Event, bool) {
 // Peek allows a look at the indexed event of the sink if it
 // exists. Otherwise nil and false will be returned.
 func (s *eventSink) Peek(index int) (*Event, bool) {
+	s.mux.RLock()
+	defer s.mux.RUnlock()
 	if index < 0 || index > len(s.events)-1 {
 		return nil, false
 	}
@@ -165,23 +185,41 @@ func (s *eventSink) Peek(index int) (*Event, bool) {
 
 // Clear removes all collected events.
 func (s *eventSink) Clear() {
+	s.mux.Lock()
+	defer s.mux.Unlock()
 	s.events = nil
 }
 
 // Len returns the number of events in the sink.
 func (s *eventSink) Len() int {
+	s.mux.RLock()
+	defer s.mux.RUnlock()
 	return len(s.events)
 }
 
 // Do allows to iterate over all events of the sink and perform a
 // function.
 func (s *eventSink) Do(do EventSinkDoFunc) error {
+	s.mux.RLock()
+	defer s.mux.RUnlock()
 	for i, evt := range s.events {
 		if err := do(i, evt); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// String prints the topics inside the sink.
+func (s *eventSink) String() string {
+	s.mux.RLock()
+	defer s.mux.RUnlock()
+	var topics []string
+	s.Do(func(i int, evt *Event) error {
+		topics = append(topics, "\""+evt.Topic()+"\"")
+		return nil
+	})
+	return "[" + strings.Join(topics, " ") + "]"
 }
 
 //--------------------

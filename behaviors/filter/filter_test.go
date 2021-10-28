@@ -35,24 +35,21 @@ func TestIncludingSuccess(t *testing.T) {
 		return len(evt.Topic()) < 6, nil
 	}
 	behavior := filter.NewIncluding(filterFunc)
-	// Testing.
-	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		if evt.Topic() == "!!!" {
-			tbe.SetSuccess()
-		}
-		if len(evt.Topic()) > 5 {
-			tbe.SetFail("topic length of %q too long (> 5) for filter", evt.Topic())
-		}
-		return nil
-	}
-	// Run test.
-	tb := mesh.NewTestbed(behavior, test)
+	// Run tests.
+	tb := mesh.NewTestbed(
+		behavior,
+		func(tbe *mesh.TestbedEvaluator) {
+			tbe.Do(func(i int, evt *mesh.Event) error {
+				tbe.Assert(len(evt.Topic()) < 6, "topic length of event %d too long: %v", i, evt)
+				return nil
+			})
+		},
+	)
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < 10000; i++ {
 			topic := generator.LimitedWord(3, 8)
 			out.Emit(topic)
 		}
-		out.Emit("!!!")
 	}, time.Second)
 	assert.NoError(err)
 }
@@ -66,24 +63,21 @@ func TestExcludingSuccess(t *testing.T) {
 		return len(evt.Topic()) < 6, nil
 	}
 	behavior := filter.NewExcluding(filterFunc)
-	// Testing.
-	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		if evt.Topic() == "!!!!!!" {
-			tbe.SetSuccess()
-		}
-		if len(evt.Topic()) < 6 {
-			tbe.SetFail("topic length of %q too short (< 6) for filter", evt.Topic())
-		}
-		return nil
-	}
-	// Run test.
-	tb := mesh.NewTestbed(behavior, test)
+	// Run tests.
+	tb := mesh.NewTestbed(
+		behavior,
+		func(tbe *mesh.TestbedEvaluator) {
+			tbe.Do(func(i int, evt *mesh.Event) error {
+				tbe.Assert(len(evt.Topic()) >= 6, "topic length of event %d too short: %v", i, evt)
+				return nil
+			})
+		},
+	)
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < 10000; i++ {
 			topic := generator.LimitedWord(3, 8)
 			out.Emit(topic)
 		}
-		out.Emit("!!!!!!")
 	}, time.Second)
 	assert.NoError(err)
 }

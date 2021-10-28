@@ -36,30 +36,25 @@ func TestSuccess(t *testing.T) {
 		return float64(l), nil
 	}
 	behavior := evaluator.New(evaluateFunc)
-	// Testing.
-	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		switch evt.Topic() {
-		case evaluator.TopicEvaluationDone:
+	// Run tests.
+	tb := mesh.NewTestbed(
+		behavior,
+		func(tbe *mesh.TestbedEvaluator) {
+			tbe.AssertRetry(func() bool { return tbe.Len() == 2 }, "not yet all events emitted")
+			evt, ok := tbe.Peek(0)
+			tbe.Assert(ok, "first event missing")
+			tbe.Assert(evt.Topic() == evaluator.TopicEvaluationDone, "topic wrong: %v", evt.Topic())
 			var evaluation evaluator.Evaluation
-			if err := evt.Payload(&evaluation); err != nil {
-				tbe.SetFail("can not retrieve evaluation payload: %v", err)
-			}
-			if evaluation.Count != 10000 {
-				tbe.SetFail("evaluation count is wrong: %d", evaluation.Count)
-			}
-			if evaluation.MinRating != 3.0 {
-				tbe.SetFail("evaluation min rating is wrong: %f", evaluation.MinRating)
-			}
-			if evaluation.MaxRating != 8.0 {
-				tbe.SetFail("evaluation max rating is wrong: %f", evaluation.MaxRating)
-			}
-		case evaluator.TopicResetDone:
-			tbe.SetSuccess()
-		}
-		return nil
-	}
-	// Run test.
-	tb := mesh.NewTestbed(behavior, test)
+			err := evt.Payload(&evaluation)
+			tbe.Assert(err == nil, "payload error not nil: %v", err)
+			tbe.Assert(evaluation.Count == 10000, "evaluation count not 10000: %v", evaluation.Count)
+			tbe.Assert(evaluation.MinRating == 3.0, "evaluation min rating not 3.0: %v", evaluation.MinRating)
+			tbe.Assert(evaluation.MaxRating == 8.0, "evaluation max rating not 8.0: %v", evaluation.MaxRating)
+			evt, ok = tbe.Peek(1)
+			tbe.Assert(ok, "second event missing")
+			tbe.Assert(evt.Topic() == evaluator.TopicResetDone, "topic not equal 'reset-done': %v", evt.Topic())
+		},
+	)
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < 10000; i++ {
 			topic := generator.LimitedWord(3, 8)
@@ -82,23 +77,20 @@ func TestFail(t *testing.T) {
 		return 1.0, nil
 	}
 	behavior := evaluator.New(evaluateFunc)
-	// Test events in testbed.
-	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		if evt.Topic() == mesh.TopicTestbedError {
-			var cellError mesh.PayloadCellError
-			if err := evt.Payload(&cellError); err != nil {
-				tbe.SetFail("invalid payload")
-			}
-			if cellError.Error != "ouch" {
-				tbe.SetFail("invalid error: %s", cellError.Error)
-			}
-			tbe.SetSuccess()
-			return nil
-		}
-		return nil
-	}
-	// Run test.
-	tb := mesh.NewTestbed(behavior, test)
+	// Run tests.
+	tb := mesh.NewTestbed(
+		behavior,
+		func(tbe *mesh.TestbedEvaluator) {
+			tbe.AssertRetry(func() bool { return tbe.Len() == 1 }, "no event published")
+			evt, ok := tbe.First()
+			tbe.Assert(ok, "cannot retrieve first event")
+			tbe.Assert(evt.Topic() == mesh.TopicTestbedError, "invalid topic: %v", evt.Topic())
+			var cellErr mesh.PayloadCellError
+			err := evt.Payload(&cellErr)
+			tbe.Assert(err == nil, "retrieving payload returned an error: %v", err)
+			tbe.Assert(cellErr.Error == "ouch", "invalid returned cell error: %v", cellErr.Error)
+		},
+	)
 	err := tb.Go(func(out mesh.Emitter) {
 		out.Emit("ouch")
 	}, time.Second)

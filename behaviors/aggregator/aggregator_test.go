@@ -41,36 +41,25 @@ func TestAggregatorBehavior(t *testing.T) {
 		return words, nil
 	}
 	behavior := aggregator.New(initializer, aggregatorFunc)
-	// Testing.
-	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		tbe.Push(evt)
-		switch evt.Topic() {
-		case aggregator.TopicAggregateDone:
-			var words map[string]bool
-			if err := evt.Payload(&words); err != nil {
-				return err
-			}
-			if len(words) != count+1 {
-				tbe.SetFail("invalid length of aggregated words: %d", len(words))
-				return nil
-			}
-		case aggregator.TopicResetDone:
-			var words map[string]bool
-			if err := evt.Payload(&words); err != nil {
-				return err
-			}
-			if len(words) != 1 {
-				tbe.SetFail("invalid length of resetted words: %d", len(words))
-				return nil
-			}
-		}
-		if tbe.Len() == 2 {
-			tbe.SetSuccess()
-		}
-		return nil
-	}
 	// Run tests.
-	tb := mesh.NewTestbed(behavior, test)
+	tb := mesh.NewTestbed(
+		behavior,
+		func(tbe *mesh.TestbedEvaluator) {
+			tbe.WaitFor(func() bool { return tbe.Len() == 2 })
+			evt, ok := tbe.First()
+			tbe.Assert(ok, "cannot retrieve first event")
+			tbe.Assert(evt.Topic() == aggregator.TopicAggregateDone, "first event is no aggregate done event: %v", evt)
+			var fstWords map[string]bool
+			tbe.Assert(evt.Payload(&fstWords) == nil, "retrieving of first payload failed")
+			tbe.Assert(len(fstWords) == count+1, "invalid length of aggregated words: %d", len(fstWords))
+			evt, ok = tbe.Last()
+			tbe.Assert(ok, "cannot retrieve last event")
+			tbe.Assert(evt.Topic() == aggregator.TopicResetDone, "last event is no reset done event: %v", evt)
+			var sndWords map[string]bool
+			tbe.Assert(evt.Payload(&sndWords) == nil, "retrieving of first payload failed")
+			tbe.Assert(len(sndWords) == 1, "invalid length of resetted words: %d", len(sndWords))
+		},
+	)
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < count; i++ {
 			topic := strconv.Itoa(i)

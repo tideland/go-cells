@@ -56,23 +56,24 @@ func TestSuccess(t *testing.T) {
 		return combo.CriterionDropFirst, nil, nil
 	}
 	behavior := combo.New(matcher)
-	// Testing.
-	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		switch evt.Topic() {
-		case combo.TopicCriterionDone:
-			var distance int
-			err := evt.Payload(&distance)
-			if err != nil {
-				return err
-			}
-			if distance == 50 {
-				tbe.SetSuccess()
-			}
-		}
-		return nil
-	}
 	// Run test.
-	tb := mesh.NewTestbed(behavior, test)
+	tb := mesh.NewTestbed(
+		behavior,
+		func(tbe *mesh.TestbedEvaluator) {
+			tbe.AssertRetry(func() bool { return tbe.Len() > 0 }, "got at least one combo")
+			err := tbe.Do(func(i int, evt *mesh.Event) error {
+				tbe.Assert(evt.Topic() == combo.TopicCriterionDone, "topic %d does not show done combo", i)
+				var distance int
+				if err := evt.Payload(&distance); err != nil {
+					return err
+				}
+				tbe.Assert(distance == 50, "invalid distance of combo: %d", distance)
+
+				return nil
+			})
+			tbe.Assert(err == nil, "testing of collected events had error: %v", err)
+		},
+	)
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < 100; i++ {
 			var topic string
