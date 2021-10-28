@@ -41,6 +41,7 @@ func TestSuccess(t *testing.T) {
 	tb := mesh.NewTestbed(
 		behavior,
 		func(tbe *mesh.TestbedEvaluator) {
+			tbe.WaitFor(func() bool { return tbe.Len() == 100 })
 			countA := 0
 			countB := 0
 			tbe.Do(func(i int, evt *mesh.Event) error {
