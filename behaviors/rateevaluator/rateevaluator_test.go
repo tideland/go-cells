@@ -36,12 +36,21 @@ func TestSuccess(t *testing.T) {
 		return strings.IndexRune(evt.Topic(), 'a') == 0, nil
 	}
 	behavior := rateevaluator.New(raterFunc, 10)
-	// Testing.
-	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		return nil
-	}
-	// Run test.
-	tb := mesh.NewTestbed(behavior, test)
+	// Run tests.
+	tb := mesh.NewTestbed(
+		behavior,
+		func(tbe *mesh.TestbedEvaluator) {
+			tbe.WaitFor(func() bool { return tbe.Len() > 0 })
+			tbe.Do(func(i int, evt *mesh.Event) error {
+				tbe.Assert(evt.Topic() == rateevaluator.TopicRate, "no rate topic: %v", evt)
+				var rate rateevaluator.Rate
+				err := evt.Payload(&rate)
+				tbe.Assert(err == nil, "payload is no rate: %v", err)
+				tbe.Assert(rate.CountMatching >= 1, "invalide count match: %d", rate.CountMatching)
+				return nil
+			})
+		},
+	)
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < 10000; i++ {
 			topic := generator.LimitedWord(3, 6)

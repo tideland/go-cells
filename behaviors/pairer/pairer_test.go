@@ -39,35 +39,21 @@ func TestSuccess(t *testing.T) {
 		return fstEvt.Topic() == sndEvt.Topic()
 	}
 	behavior := pairer.New(pairerFunc, time.Second)
-	// Testing.
-	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		tbe.Push(evt)
-		count := 0
-		tbe.Do(func(i int, eevt *mesh.Event) error {
-			switch evt.Topic() {
-			case pairer.TopicMatch:
-				count++
-				if count == 1 {
-					// Skip waiting for second.
-					return nil
-				}
+	// Run tests.
+	tb := mesh.NewTestbed(
+		behavior,
+		func(tbe *mesh.TestbedEvaluator) {
+			tbe.WaitFor(func() bool { return tbe.Len() > 0 })
+			tbe.Do(func(i int, evt *mesh.Event) error {
+				tbe.Assert(evt.Topic() == pairer.TopicMatch, "invalid topic %d: %v", i, evt)
 				var pair pairer.Pair
-				if err := evt.Payload(&pair); err != nil {
-					tbe.SetFail("event payload is no pair: %v", evt)
-				}
-				if pair.First.Topic() != pair.Second.Topic() {
-					tbe.SetFail("pair event topic missmatch: %q <> %q", pair.First.Topic(), pair.Second.Topic())
-				}
-				tbe.SetSuccess()
-			case pairer.TopicTimeout:
-				tbe.SetFail("no pairing received")
-			}
-			return nil
-		})
-		return nil
-	}
-	// Run test.
-	tb := mesh.NewTestbed(behavior, test)
+				err := evt.Payload(&pair)
+				tbe.Assert(err == nil, "error retrieving the pair event payload: %v", err)
+				tbe.Assert(pair.First.Topic() == pair.Second.Topic(), "pair event topic not equal: %v", pair)
+				return nil
+			})
+		},
+	)
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < 10000; i++ {
 			topic := generator.LimitedWord(4, 5)
@@ -90,18 +76,17 @@ func TestFailOneHit(t *testing.T) {
 		return false
 	}
 	behavior := pairer.New(pairerFunc, 10*time.Millisecond)
-	// Testing.
-	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		switch evt.Topic() {
-		case pairer.TopicTimeout:
-			tbe.SetSuccess()
-		case pairer.TopicMatch:
-			tbe.SetFail("pairing found")
-		}
-		return nil
-	}
-	// Run test.
-	tb := mesh.NewTestbed(behavior, test)
+	// Run tests.
+	tb := mesh.NewTestbed(
+		behavior,
+		func(tbe *mesh.TestbedEvaluator) {
+			tbe.AssertRetry(func() bool { return tbe.Len() > 0 }, "no emitted events")
+			tbe.Do(func(i int, evt *mesh.Event) error {
+				tbe.Assert(evt.Topic() != pairer.TopicMatch, "invalid topic %d: %v", i, evt)
+				return nil
+			})
+		},
+	)
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < 1000; i++ {
 			topic := generator.LimitedWord(4, 5)
@@ -120,23 +105,20 @@ func TestFailNoHit(t *testing.T) {
 		return false
 	}
 	behavior := pairer.New(pairerFunc, 10*time.Millisecond)
-	// Testing.
-	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		switch evt.Topic() {
-		case pairer.TopicMatch, pairer.TopicTimeout:
-			tbe.SetFail("any pairer output wrong here")
-		}
-		return nil
-	}
-	// Run test.
-	tb := mesh.NewTestbed(behavior, test)
+	// Run tests.
+	tb := mesh.NewTestbed(
+		behavior,
+		func(tbe *mesh.TestbedEvaluator) {
+			tbe.Assert(tbe.Len() == 0, "no pairer output expected: %v", tbe)
+		},
+	)
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < 10000; i++ {
 			topic := generator.LimitedWord(4, 5)
 			out.Emit(topic)
 		}
 	}, time.Second)
-	assert.ErrorContains(err, "timeout")
+	assert.NoError(err)
 }
 
 // EOF

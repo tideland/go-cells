@@ -16,6 +16,7 @@ const (
 	TopicTerminated = "terminated"
 	TopicError      = "error"
 
+	TopicTestbedDone       = "testbed-done"
 	TopicTestbedTerminated = "testbed-terminated"
 	TopicTestbedError      = "testbed-error"
 )

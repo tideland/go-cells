@@ -39,15 +39,18 @@ func TestSuccess(t *testing.T) {
 		return out.Emit(topic)
 	}
 	behavior := condition.New(tester, processor)
-	// Testing.
-	test := func(tbe *mesh.TestbedEvaluator, evt *mesh.Event) error {
-		if evt.Topic() == "found-now" {
-			tbe.SetSuccess()
-		}
-		return nil
-	}
-	// Run test.
-	tb := mesh.NewTestbed(behavior, test)
+	// Run tests.
+	tb := mesh.NewTestbed(
+		behavior,
+		func(tbe *mesh.TestbedEvaluator) {
+			tbe.AssertRetry(func() bool { return tbe.Len() > 0 }, "collected events have to be at least 1: %d", tbe.Len())
+
+			tbe.Do(func(i int, evt *mesh.Event) error {
+				tbe.Assert(evt.Topic() == "found-now", "collected event topic has to be 'found-now': %v", evt)
+				return nil
+			})
+		},
+	)
 	err := tb.Go(func(out mesh.Emitter) {
 		for i := 0; i < 50; i++ {
 			topic := generator.OneStringOf(topics...)
