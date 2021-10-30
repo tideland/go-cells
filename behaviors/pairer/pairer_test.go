@@ -45,7 +45,7 @@ func TestSuccess(t *testing.T) {
 		func(tbe *mesh.TestbedEvaluator) {
 			tbe.WaitFor(func() bool { return tbe.Len() > 0 })
 			tbe.Do(func(i int, evt *mesh.Event) error {
-				tbe.Assert(evt.Topic() == pairer.TopicPairerMatch, "invalid topic %d: %v", i, evt)
+				tbe.Assert(evt.Topic() == pairer.TopicMatch, "invalid topic %d: %v", i, evt)
 				var pair pairer.Pair
 				err := evt.Payload(&pair)
 				tbe.Assert(err == nil, "error retrieving the pair event payload: %v", err)
@@ -82,7 +82,7 @@ func TestFailOneHit(t *testing.T) {
 		func(tbe *mesh.TestbedEvaluator) {
 			tbe.AssertRetry(func() bool { return tbe.Len() > 0 }, "no emitted events")
 			tbe.Do(func(i int, evt *mesh.Event) error {
-				tbe.Assert(evt.Topic() != pairer.TopicPairerMatch, "invalid topic %d: %v", i, evt)
+				tbe.Assert(evt.Topic() != pairer.TopicMatch, "invalid topic %d: %v", i, evt)
 				return nil
 			})
 		},
