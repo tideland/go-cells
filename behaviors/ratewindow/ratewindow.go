@@ -22,95 +22,91 @@ import (
 //--------------------
 
 const (
+	// TopicReset tells the cell to reset its collected events.
+	TopicReset = "reset!"
+
 	// TopicRateWindow signals a detected event rate window.
 	TopicRateWindow = "rate-window"
 )
 
 //--------------------
-// RATE WINDOW BEHAVIOR
+// HELPER
 //--------------------
 
 // RateWindowCriterion is used by the rate window behavior and has to return
 // true, if the passed event matches a criterion for rate window measuring.
 type RateWindowCriterion func(evt *mesh.Event) (bool, error)
 
+//--------------------
+// RATE WINDOW BEHAVIOR
+//--------------------
+
 // Behavior implements the rate window behavior.
 type Behavior struct {
 	matches  RateWindowCriterion
 	count    int
 	duration time.Duration
-
-	cell    cells.Cell
-	sink    *mesh.EventSink
-	process cells.EventSinkProcessor
+	process  mesh.EventSinkProcessor
+	sink     mesh.EventSink
 }
 
-// NewRateWindowBehavior creates an event rate window behavior. It checks
-// if an event matches the passed criterion. If count events match during
+// New creates an event rate window behavior. It checks if an event
+// matches the passed criterion. If count events match during
 // duration the process function is called. Its returned payload is
 // emitted as new event with topic "rate-window". A received "reset" as
 // topic resets the collected matches.
-func NewRateWindowBehavior(
+func New(
 	matches RateWindowCriterion,
 	count int,
 	duration time.Duration,
-	process cells.EventSinkProcessor) cells.Behavior {
-	return &rateWindowBehavior{
-		sink:     cells.NewEventSink(count),
+	process mesh.EventSinkProcessor) *Behavior {
+	return &Behavior{
 		matches:  matches,
 		count:    count,
 		duration: duration,
 		process:  process,
+		sink:     mesh.NewEventSink(count),
 	}
 }
 
-// Init implements the cells.Behavior interface.
-func (b *rateWindowBehavior) Init(c cells.Cell) error {
-	b.cell = c
-	return nil
-}
-
-// Terminate implements the cells.Behavior interface.
-func (b *rateWindowBehavior) Terminate() error {
-	return nil
-}
-
-// ProcessEvent implements the cells.Behavior interface.
-func (b *rateWindowBehavior) ProcessEvent(event cells.Event) error {
-	switch event.Topic() {
-	case cells.TopicReset:
-		b.sink.Clear()
-	default:
-		ok, err := b.matches(event)
-		if err != nil {
-			return err
-		}
-		if !ok {
+// Go implements the mesh.Behavior interface.
+func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
+	for {
+		select {
+		case <-cell.Context().Done():
 			return nil
-		}
-		b.sink.Push(event)
-		if b.sink.Len() == b.count {
-			// Got enough matches, check duration.
-			first, _ := b.sink.PeekFirst()
-			last, _ := b.sink.PeekLast()
-			difference := last.Timestamp().Sub(first.Timestamp())
-			if difference <= b.duration {
-				// We've got a burst!
-				payload, err := b.process(b.sink)
+		case evt := <-in.Pull():
+			switch evt.Topic() {
+			case TopicReset:
+				b.sink.Clear()
+			default:
+				// CHeck if the event matches.
+				ok, err := b.matches(evt)
 				if err != nil {
 					return err
 				}
-				b.cell.EmitNew(TopicRateWindow, payload)
+				if !ok {
+					return nil
+				}
+				// Check matches and duration.
+				b.sink.Push(evt)
+				if b.sink.Len() == b.count {
+					first, _ := b.sink.First()
+					last, _ := b.sink.Last()
+					difference := last.Timestamp().Sub(first.Timestamp())
+					if difference <= b.duration {
+						// We've got a burst!
+						payload, err := b.process(b.sink)
+						if err != nil {
+							return err
+						}
+						out.Emit(TopicRateWindow, payload)
+					}
+					b.sink.Shift()
+				}
 			}
-			b.sink.PullFirst()
 		}
 	}
-	return nil
-}
-
-// Recover implements the cells.Behavior interface.
-func (b *rateWindowBehavior) Recover(err interface{}) error {
-	b.sink = cells.NewEventSink(b.count)
 	return nil
 }
 
