@@ -41,7 +41,7 @@ The project already contains some standard behaviors, the number is still growin
 - **Rate Evaluator** measures times between a number of criterion fitting events and
   emits statistical data about these fittings.
 - **Rate Window Evaluator** checks if a number of events in a given timespan matches
-  a given criterion.
+  a given criterion. In case it processes them.
 
 ## Contributors
 

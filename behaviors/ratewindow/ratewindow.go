@@ -5,7 +5,7 @@
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
 
-package rateevaluator // import "tideland.dev/go/cells/behaviors/ratewindow"
+package ratewindow // import "tideland.dev/go/cells/behaviors/ratewindow"
 
 //--------------------
 // IMPORTS
@@ -41,7 +41,10 @@ type RateWindowCriterion func(evt *mesh.Event) (bool, error)
 // RATE WINDOW BEHAVIOR
 //--------------------
 
-// Behavior implements the rate window behavior.
+// Behavior implements the rate window behavior. It can be used to check,
+// if a number of wanted (matching) events happens in a defined timeframe.
+// In case they are found all collected ones will be processed by a given
+// function.
 type Behavior struct {
 	matches  RateWindowCriterion
 	count    int
@@ -50,11 +53,9 @@ type Behavior struct {
 	sink     mesh.EventSink
 }
 
-// New creates an event rate window behavior. It checks if an event
-// matches the passed criterion. If count events match during
-// duration the process function is called. Its returned payload is
-// emitted as new event with topic "rate-window". A received "reset" as
-// topic resets the collected matches.
+// New creates a rate window behavior. Arguments are the function for
+// checking the events, the number of expected matches, the duration
+// and the processing function.
 func New(
 	matches RateWindowCriterion,
 	count int,
@@ -86,7 +87,7 @@ func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error 
 					return err
 				}
 				if !ok {
-					return nil
+					continue
 				}
 				// Check matches and duration.
 				b.sink.Push(evt)
@@ -95,14 +96,14 @@ func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error 
 					last, _ := b.sink.Last()
 					difference := last.Timestamp().Sub(first.Timestamp())
 					if difference <= b.duration {
-						// We've got a burst!
+						// We've got a burst, yeah!
 						payload, err := b.process(b.sink)
 						if err != nil {
 							return err
 						}
 						out.Emit(TopicRateWindow, payload)
+						b.sink.Clear()
 					}
-					b.sink.Shift()
 				}
 			}
 		}
