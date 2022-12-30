@@ -30,7 +30,7 @@ type Receptor interface {
 // or more cells.
 type Emitter interface {
 	// Emit creates a new event and appends it to the output stream.
-	Emit(topic string, payloads ...interface{}) error
+	Emit(topic string, payloads ...any) error
 
 	// EmitEvent appends the given event to the output stream.
 	EmitEvent(evt *Event) error
@@ -58,7 +58,7 @@ func (str *stream) Pull() <-chan *Event {
 }
 
 // Emit creates a new event and emits it.
-func (str *stream) Emit(topic string, payloads ...interface{}) error {
+func (str *stream) Emit(topic string, payloads ...any) error {
 	evt, err := NewEvent(topic, payloads...)
 	if err != nil {
 		return err

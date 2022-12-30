@@ -69,7 +69,7 @@ type EventSinkReader interface {
 
 // EventSinkProcessor defines a function used to access the collected events
 // in a sink for processing tasks. It only has reading access to the sink.
-type EventSinkProcessor func(reader EventSinkReader) (interface{}, error)
+type EventSinkProcessor func(reader EventSinkReader) (any, error)
 
 //--------------------
 // EVENT SINK

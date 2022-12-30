@@ -26,7 +26,7 @@ import (
 // Here it supports the interface EventSink.
 //
 // A success can be signaled with SignalSuccess(), a failing with
-// SignalFail(reason string, vs ...interface{}).
+// SignalFail(reason string, vs ...any).
 type TestbedEvaluator struct {
 	EventSink
 
@@ -49,7 +49,7 @@ func (tbe *TestbedEvaluator) WaitFor(assertion func() bool) {
 
 // AssertRetry waits until the given function returns true. It runs the function up to 5 times
 // with growing pauses inbetween. If the final call returns false the test fails.
-func (tbe *TestbedEvaluator) AssertRetry(assertion func() bool, reason string, vs ...interface{}) {
+func (tbe *TestbedEvaluator) AssertRetry(assertion func() bool, reason string, vs ...any) {
 	duration := 2 * time.Millisecond
 	for i := 0; i < 5; i++ {
 		if assertion() {
@@ -64,7 +64,7 @@ func (tbe *TestbedEvaluator) AssertRetry(assertion func() bool, reason string, v
 
 // Assert tests if an assertion is true, otherwise it segnals a
 // failing test.
-func (tbe *TestbedEvaluator) Assert(assertion bool, reason string, vs ...interface{}) {
+func (tbe *TestbedEvaluator) Assert(assertion bool, reason string, vs ...any) {
 	if assertion {
 		return
 	}
@@ -117,7 +117,7 @@ func (tbm testbedMesh) Unsubscribe(emitterName, receptorName string) error {
 }
 
 // Emit implements mesh.Mesh and always returns an error.
-func (tbm testbedMesh) Emit(name, topic string, payloads ...interface{}) error {
+func (tbm testbedMesh) Emit(name, topic string, payloads ...any) error {
 	evt, err := NewEvent(topic, payloads...)
 	if err != nil {
 		return err
@@ -180,7 +180,7 @@ func (tbc *testbedCell) Pull() <-chan *Event {
 }
 
 // Emit implements mesh.Emitter.
-func (tbc *testbedCell) Emit(topic string, payloads ...interface{}) error {
+func (tbc *testbedCell) Emit(topic string, payloads ...any) error {
 	evt, err := NewEvent(topic, payloads...)
 	if err != nil {
 		return err
@@ -241,7 +241,7 @@ func newTestbedEmitter(tb *Testbed) *testbedEmitter {
 }
 
 // Emit creates an event and sends it to the behavior.
-func (tbe *testbedEmitter) Emit(topic string, payloads ...interface{}) error {
+func (tbe *testbedEmitter) Emit(topic string, payloads ...any) error {
 	evt, err := NewEvent(topic, payloads...)
 	if err != nil {
 		return err

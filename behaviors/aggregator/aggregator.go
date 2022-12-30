@@ -32,7 +32,7 @@ const (
 
 // AggregatorFunc is a function receiving the current status payload
 // and event and returns the next status payload.
-type AggregatorFunc func(status interface{}, evt *mesh.Event) (interface{}, error)
+type AggregatorFunc func(status any, evt *mesh.Event) (any, error)
 
 //--------------------
 // BEHAVIOR
@@ -41,8 +41,8 @@ type AggregatorFunc func(status interface{}, evt *mesh.Event) (interface{}, erro
 // Behavior provides a behavior which aggregates the stream of events with
 // a given function. A received "reset!" topic resets the status.
 type Behavior struct {
-	initialize func() interface{}
-	status     interface{}
+	initialize func() any
+	status     any
 	aggregate  AggregatorFunc
 }
 
@@ -51,7 +51,7 @@ var _ mesh.Behavior = (*Behavior)(nil)
 // New creates an instance of the aggregator behavior with the given
 // aggregator function.The initializer function creates the first value
 // before aggregating.
-func New(initializer func() interface{}, aggregator AggregatorFunc) *Behavior {
+func New(initializer func() any, aggregator AggregatorFunc) *Behavior {
 	b := &Behavior{
 		initialize: initializer,
 		status:     nil,

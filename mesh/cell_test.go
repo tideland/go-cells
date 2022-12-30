@@ -51,7 +51,7 @@ func TestCellChain(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	ctx, cancel := context.WithCancel(context.Background())
 	topics := []string{}
-	sigc := make(chan interface{})
+	sigc := make(chan any)
 	upcaser := func(cell Cell, evt *Event, out Emitter) error {
 		upperTopic := strings.ToUpper(evt.Topic())
 		out.Emit(upperTopic)
@@ -97,7 +97,7 @@ func TestCellAutoUnsubscribe(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	failed := []*Event{}
 	collected := []*Event{}
-	sigc := make(chan interface{})
+	sigc := make(chan any)
 	forwarder := func(cell Cell, evt *Event, out Emitter) error {
 		return out.EmitEvent(evt)
 	}
@@ -132,7 +132,7 @@ func TestCellAutoUnsubscribe(t *testing.T) {
 	cForwarderA.receive("dont-care")
 	cForwarderB.receive("dont-care")
 
-	foundc := make(chan interface{})
+	foundc := make(chan any)
 
 	for _, evt := range collected {
 		if evt.Topic() == TopicError {
@@ -169,7 +169,7 @@ func (ms meshStub) Unsubscribe(toName, fromName string) error {
 	return nil
 }
 
-func (ms meshStub) Emit(name, topic string, payloads ...interface{}) error {
+func (ms meshStub) Emit(name, topic string, payloads ...any) error {
 	return nil
 }
 

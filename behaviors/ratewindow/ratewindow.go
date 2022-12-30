@@ -53,6 +53,8 @@ type Behavior struct {
 	sink     mesh.EventSink
 }
 
+var _ mesh.Behavior = (*Behavior)(nil)
+
 // New creates a rate window behavior. Arguments are the function for
 // checking the events, the number of expected matches, the duration
 // and the processing function.

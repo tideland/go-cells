@@ -90,7 +90,7 @@ func (m *mesh) Unsubscribe(emitterName, receptorName string) error {
 }
 
 // Emit implements Mesh.
-func (m *mesh) Emit(name, topic string, payloads ...interface{}) error {
+func (m *mesh) Emit(name, topic string, payloads ...any) error {
 	evt, err := NewEvent(topic, payloads...)
 	if err != nil {
 		return err

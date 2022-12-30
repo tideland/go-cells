@@ -34,6 +34,8 @@ type Behavior struct {
 	mapper MapperFunc
 }
 
+var _ mesh.Behavior = (*Behavior)(nil)
+
 // New creates a new instance of the mapper behavior.
 func New(mapper MapperFunc) *Behavior {
 	return &Behavior{

@@ -34,7 +34,7 @@ type Mesh interface {
 	Unsubscribe(emitterName, receptorName string) error
 
 	// Emit creates an event and raises it to the named cell.
-	Emit(name, topic string, payloads ...interface{}) error
+	Emit(name, topic string, payloads ...any) error
 
 	// EmitEvent raises an event to the named cell.
 	EmitEvent(name string, evt *Event) error
@@ -92,7 +92,7 @@ type Behavior interface {
 // BehaviorFunc simplifies implementation of a behavior when only
 // one function is needed. It can be deployed via
 //
-//     myMesh.Go("my-name", BehaviorFunc(myFunc))
+//	myMesh.Go("my-name", BehaviorFunc(myFunc))
 type BehaviorFunc func(cell Cell, in Receptor, out Emitter) error
 
 // Go implements Behavior.

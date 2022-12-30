@@ -34,6 +34,8 @@ type Behavior struct {
 	oneTime OneTimerFunc
 }
 
+var _ mesh.Behavior = (*Behavior)(nil)
+
 // New creates a one-time behavior using the given function.
 func New(oneTime OneTimerFunc) *Behavior {
 	return &Behavior{

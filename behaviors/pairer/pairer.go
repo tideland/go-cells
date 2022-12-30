@@ -56,6 +56,8 @@ type Behavior struct {
 	hit      *mesh.Event
 }
 
+var _ mesh.Behavior = (*Behavior)(nil)
+
 // New creates a new instance of the pairer behavior.
 func New(pairer PairerFunc, duration time.Duration) *Behavior {
 	return &Behavior{

@@ -30,12 +30,12 @@ import (
 func TestAggregatorBehavior(t *testing.T) {
 	assert := asserts.NewTesting(t, asserts.FailStop)
 	count := 50
-	initializer := func() interface{} {
+	initializer := func() any {
 		return map[string]bool{
 			"initialized": true,
 		}
 	}
-	aggregatorFunc := func(aggregated interface{}, evt *mesh.Event) (interface{}, error) {
+	aggregatorFunc := func(aggregated any, evt *mesh.Event) (any, error) {
 		words := aggregated.(map[string]bool)
 		words[evt.Topic()] = true
 		return words, nil

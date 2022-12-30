@@ -33,7 +33,7 @@ type Event struct {
 }
 
 // NewEvent creates a new Event based on a topic. The payloads are optional.
-func NewEvent(topic string, payloads ...interface{}) (*Event, error) {
+func NewEvent(topic string, payloads ...any) (*Event, error) {
 	if topic == "" {
 		return nil, fmt.Errorf("event needs topic")
 	}
@@ -70,10 +70,10 @@ func (evt Event) Timestamp() time.Time {
 // where an event has been emitted or simply re-emitted.
 // The path layouts are
 //
-//     / is emitted via the mesh,
-//     /foo is emitted by mesh and re-emitted by foo,
-//     foo is emitted by foo,
-//     foo/bar is emitted by foo and re-emitted by bar.
+//	/ is emitted via the mesh,
+//	/foo is emitted by mesh and re-emitted by foo,
+//	foo is emitted by foo,
+//	foo/bar is emitted by foo and re-emitted by bar.
 //
 // So also longer paths like /foo/bar/baz are possible.
 func (evt Event) Emitters() string {
@@ -94,7 +94,7 @@ func (evt Event) HasPayload() bool {
 }
 
 // Payload unmarshals the payload of the event.
-func (evt Event) Payload(payload interface{}) error {
+func (evt Event) Payload(payload any) error {
 	if evt.payload == nil {
 		return fmt.Errorf("Event contains no payload")
 	}

@@ -18,7 +18,7 @@ type emitter struct {
 }
 
 // Emit implements Emitter.
-func (e *emitter) Emit(topic string, payloads ...interface{}) error {
+func (e *emitter) Emit(topic string, payloads ...any) error {
 	return e.cell.receive(topic, payloads...)
 }
 

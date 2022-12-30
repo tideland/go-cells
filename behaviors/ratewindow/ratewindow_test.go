@@ -36,7 +36,7 @@ func TestSuccess(t *testing.T) {
 		assert.NoError(err)
 		return payload > 5, nil
 	}
-	processor := func(reader mesh.EventSinkReader) (interface{}, error) {
+	processor := func(reader mesh.EventSinkReader) (any, error) {
 		var count int
 		var sum int
 		doer := func(i int, evt *mesh.Event) error {

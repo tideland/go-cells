@@ -131,7 +131,7 @@ func (c *cell) unsubscribeFrom(ic *cell) {
 }
 
 // receive creates an passes an event to handle to the cell.
-func (c *cell) receive(topic string, payload ...interface{}) error {
+func (c *cell) receive(topic string, payload ...any) error {
 	evt, err := NewEvent(topic, payload...)
 	if err != nil {
 		return err
@@ -164,7 +164,7 @@ func (c *cell) Pull() <-chan *Event {
 }
 
 // Emit implements Emitter.
-func (c *cell) Emit(topic string, payloads ...interface{}) error {
+func (c *cell) Emit(topic string, payloads ...any) error {
 	evt, err := NewEvent(topic, payloads...)
 	if err != nil {
 		return err

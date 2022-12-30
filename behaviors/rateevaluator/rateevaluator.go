@@ -59,6 +59,8 @@ type Behavior struct {
 	count   int
 }
 
+var _ mesh.Behavior = (*Behavior)(nil)
+
 // New creates an event rate evaluating behavior.
 func New(matches RaterFunc, count int) *Behavior {
 	return &Behavior{

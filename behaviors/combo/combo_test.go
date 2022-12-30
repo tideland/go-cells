@@ -32,7 +32,7 @@ func TestSuccess(t *testing.T) {
 	generator := generators.New(generators.FixedRand())
 	topics := generator.Words(50)
 	wanted := "test-topic"
-	matcher := func(r mesh.EventSinkReader) (combo.CriterionMatch, interface{}, error) {
+	matcher := func(r mesh.EventSinkReader) (combo.CriterionMatch, any, error) {
 		// Matcher tries to find the wanted topic twice. When found twice
 		// the distance will be returned.
 		var found []int
