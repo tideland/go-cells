@@ -1,6 +1,6 @@
 // Tideland Go Cells - Mesh
 //
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
+// Copyright (C) 2010-2022 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
@@ -66,6 +66,10 @@ type EventSinkReader interface {
 	// Do iterates over all collected events.
 	Do(do EventSinkDoFunc) error
 }
+
+// EventSinkProcessor defines a function used to access the collected events
+// in a sink for processing tasks. It only has reading access to the sink.
+type EventSinkProcessor func(reader EventSinkReader) (interface{}, error)
 
 //--------------------
 // EVENT SINK

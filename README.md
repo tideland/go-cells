@@ -38,6 +38,10 @@ The project already contains some standard behaviors, the number is still growin
   called again. Outgoing events can be emitted during processing.
 - **Pairer** allows to define a criterion for a first and second evend and a timeout
   between those. Matches and timouts will be emitted.
+- **Rate Evaluator** measures times between a number of criterion fitting events and
+  emits statistical data about these fittings.
+- **Rate Window Evaluator** checks if a number of events in a given timespan matches
+  a given criterion. In case it processes them.
 
 ## Contributors
 
