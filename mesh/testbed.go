@@ -1,6 +1,6 @@
 // Tideland Go Cells - Mesh
 //
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
+// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
@@ -16,6 +16,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"tideland.dev/go/cells/mesh/internal"
 )
 
 //--------------------
@@ -26,7 +28,7 @@ import (
 // Here it supports the interface EventSink.
 //
 // A success can be signaled with SignalSuccess(), a failing with
-// SignalFail(reason string, vs ...interface{}).
+// SignalFail(reason string, vs ...any).
 type TestbedEvaluator struct {
 	EventSink
 
@@ -36,7 +38,7 @@ type TestbedEvaluator struct {
 // newTestbedEvaluator returns an initialized testbed context.
 func newTestbedEvaluator(tb *Testbed) *TestbedEvaluator {
 	return &TestbedEvaluator{
-		EventSink: NewEventSink(0),
+		EventSink: internal.NewEventSink(0),
 		tb:        tb,
 	}
 }
@@ -49,7 +51,7 @@ func (tbe *TestbedEvaluator) WaitFor(assertion func() bool) {
 
 // AssertRetry waits until the given function returns true. It runs the function up to 5 times
 // with growing pauses inbetween. If the final call returns false the test fails.
-func (tbe *TestbedEvaluator) AssertRetry(assertion func() bool, reason string, vs ...interface{}) {
+func (tbe *TestbedEvaluator) AssertRetry(assertion func() bool, reason string, vs ...any) {
 	duration := 2 * time.Millisecond
 	for i := 0; i < 5; i++ {
 		if assertion() {
@@ -64,7 +66,7 @@ func (tbe *TestbedEvaluator) AssertRetry(assertion func() bool, reason string, v
 
 // Assert tests if an assertion is true, otherwise it segnals a
 // failing test.
-func (tbe *TestbedEvaluator) Assert(assertion bool, reason string, vs ...interface{}) {
+func (tbe *TestbedEvaluator) Assert(assertion bool, reason string, vs ...any) {
 	if assertion {
 		return
 	}
@@ -95,167 +97,6 @@ type TestbedRunner func(out Emitter)
 type TestbedTester func(tbe *TestbedEvaluator)
 
 //--------------------
-// TESTBED MESH
-//--------------------
-
-// testbedMesh implements the Mesh interface.
-type testbedMesh struct{}
-
-// Go implements Mesh and always returns an error.
-func (tbm testbedMesh) Go(name string, b Behavior) error {
-	return fmt.Errorf("cell name '%s' already used", name)
-}
-
-// Subscribe implements mesh.Mesh and always returns an error.
-func (tbm testbedMesh) Subscribe(emitterName, receptorName string) error {
-	return fmt.Errorf("emitter cell '%s' does not exist", emitterName)
-}
-
-// Unsubscribe implements mesh.Mesh and always returns an error.
-func (tbm testbedMesh) Unsubscribe(emitterName, receptorName string) error {
-	return fmt.Errorf("emitter cell '%s' does not exist", emitterName)
-}
-
-// Emit implements mesh.Mesh and always returns an error.
-func (tbm testbedMesh) Emit(name, topic string, payloads ...interface{}) error {
-	evt, err := NewEvent(topic, payloads...)
-	if err != nil {
-		return err
-	}
-	return tbm.EmitEvent(name, evt)
-}
-
-// EmitEvent implements mesh.Mesh and always returns an error.
-func (tbm testbedMesh) EmitEvent(name string, evt *Event) error {
-	return fmt.Errorf("cell '%s' does not exist", name)
-}
-
-// Emitter implements mesh.Mesh and always returns an error.
-func (tbm testbedMesh) Emitter(name string) (Emitter, error) {
-	return nil, fmt.Errorf("cell '%s' does not exist", name)
-}
-
-//--------------------
-// TESTBED CELL
-//--------------------
-
-// testbedCell runs the behavior and provides the needed interfaces.
-type testbedCell struct {
-	ctx      context.Context
-	tb       *Testbed
-	behavior Behavior
-	inc      chan *Event
-}
-
-// newTestbedCell initializes the testbed cell and spawns the goroutine.
-func newTestbedCell(ctx context.Context, tb *Testbed, behavior Behavior) *testbedCell {
-	tbc := &testbedCell{
-		ctx:      ctx,
-		tb:       tb,
-		behavior: behavior,
-		inc:      make(chan *Event),
-	}
-	go tbc.backend()
-	return tbc
-}
-
-// Context imepelements mesh.Cell.
-func (tbc *testbedCell) Context() context.Context {
-	return tbc.ctx
-}
-
-// Name imepelements mesh.Cell and returns a static name.
-func (tbc *testbedCell) Name() string {
-	return "testbed"
-}
-
-// Mesh imepelements mesh.Cell.
-func (tbc *testbedCell) Mesh() Mesh {
-	return testbedMesh{}
-}
-
-// Pull implements mesh.Receptor.
-func (tbc *testbedCell) Pull() <-chan *Event {
-	return tbc.inc
-}
-
-// Emit implements mesh.Emitter.
-func (tbc *testbedCell) Emit(topic string, payloads ...interface{}) error {
-	evt, err := NewEvent(topic, payloads...)
-	if err != nil {
-		return err
-	}
-	return tbc.EmitEvent(evt)
-}
-
-// EmitEvent implements mesh.Emitter and evaluates the event.
-func (tbc *testbedCell) EmitEvent(evt *Event) error {
-	evt.appendEmitter(tbc.Name())
-	tbc.tb.evaluator.Push(evt)
-	return nil
-}
-
-// push writes an event into the input channel.
-func (tbc *testbedCell) push(evt *Event) error {
-	select {
-	case <-tbc.ctx.Done():
-		// Ignore as test result.
-		return nil
-	case tbc.inc <- evt:
-		return nil
-	}
-}
-
-// backend runs the behavior to test.
-func (tbc *testbedCell) backend() {
-	// Execute the behavior.
-	err := tbc.behavior.Go(tbc, tbc, tbc)
-	if err != nil {
-		// Notify subscribers about error.
-		tbc.Emit(TopicTestbedError, PayloadCellError{
-			CellName: tbc.Name(),
-			Error:    err.Error(),
-		})
-	} else {
-		// Notify subscribers about termination.
-		tbc.Emit(TopicTestbedTerminated, PayloadTermination{
-			CellName: tbc.Name(),
-		})
-	}
-}
-
-//--------------------
-// TESTBED EMITTER
-//--------------------
-
-// testbedEmitter allows the testbed runner to emit events to the testbed.
-type testbedEmitter struct {
-	tb *Testbed
-}
-
-// newTesbedEmitter initializes the testbed emitter.
-func newTestbedEmitter(tb *Testbed) *testbedEmitter {
-	return &testbedEmitter{
-		tb: tb,
-	}
-}
-
-// Emit creates an event and sends it to the behavior.
-func (tbe *testbedEmitter) Emit(topic string, payloads ...interface{}) error {
-	evt, err := NewEvent(topic, payloads...)
-	if err != nil {
-		return err
-	}
-	return tbe.EmitEvent(evt)
-}
-
-// Emit sends an event to the behavior.
-func (tbe *testbedEmitter) EmitEvent(evt *Event) error {
-	evt.initEmitters()
-	return tbe.tb.cell.push(evt)
-}
-
-//--------------------
 // TESTBED
 //--------------------
 
@@ -273,10 +114,15 @@ type Testbed struct {
 	cancel     func()
 	evaluator  *TestbedEvaluator
 	test       TestbedTester
-	cell       *testbedCell
+	cell       testbedCellRef
 	succeededc chan struct{}
 	failedc    chan string
 	errc       chan error
+}
+
+// testbedCellRef is an internal reference type for testbed cell
+type testbedCellRef interface {
+	Push(evt *Event) error
 }
 
 // NewTestbed starts a test cell with the given behavior. The tester function
@@ -292,7 +138,9 @@ func NewTestbed(behavior Behavior, tester TestbedTester) *Testbed {
 		errc:       make(chan error, 1),
 	}
 	tb.evaluator = newTestbedEvaluator(tb)
-	tb.cell = newTestbedCell(ctx, tb, behavior)
+	tb.cell = internal.NewTestbedCell(ctx, behavior, func(evt *Event) {
+		tb.evaluator.Push(evt)
+	})
 	return tb
 }
 
@@ -301,7 +149,7 @@ func NewTestbed(behavior Behavior, tester TestbedTester) *Testbed {
 // their tests. In case of no fail signal or error the tests succeeds.
 func (tb *Testbed) Go(run TestbedRunner, timeout time.Duration) error {
 	go func() {
-		tbe := newTestbedEmitter(tb)
+		tbe := internal.NewTestbedEmitter(tb.cell)
 
 		run(tbe)
 		tb.test(tb.evaluator)

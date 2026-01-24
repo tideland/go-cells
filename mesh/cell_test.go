@@ -1,6 +1,6 @@
 // Tideland Go Cells - Mesh - Tests
 //
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
+// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
@@ -18,8 +18,29 @@ import (
 	"testing"
 	"time"
 
-	"tideland.dev/go/audit/asserts"
+	"tideland.dev/go/asserts/verify"
 )
+
+//--------------------
+// HELPERS
+//--------------------
+
+// waitClosed waits for a channel to close or times out.
+func waitClosed(t *testing.T, ch chan any, timeout time.Duration, msgAndArgs ...any) {
+	t.Helper()
+	select {
+	case <-ch:
+		// Channel closed successfully
+	case <-time.After(timeout):
+		msg := "channel not closed within timeout"
+		if len(msgAndArgs) > 0 {
+			if s, ok := msgAndArgs[0].(string); ok {
+				msg = s
+			}
+		}
+		t.Fatalf("%s", msg)
+	}
+}
 
 //--------------------
 // TESTS
@@ -28,9 +49,8 @@ import (
 // TestCellSimple provides a simple processing of some
 // events.
 func TestCellSimple(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
 	ctx, cancel := context.WithCancel(context.Background())
-	sigc := asserts.MakeWaitChan()
+	sigc := make(chan any, 1)
 	collector := func(cell Cell, evt *Event, out Emitter) error {
 		close(sigc)
 		return nil
@@ -38,9 +58,9 @@ func TestCellSimple(t *testing.T) {
 	tbCollector := NewRequestBehavior(collector)
 	cCollector := newCell(ctx, "collector", meshStub{}, tbCollector, drop)
 
-	cCollector.receive("one")
+	cCollector.Receive("one")
 
-	assert.WaitClosed(sigc, time.Second)
+	waitClosed(t, sigc, time.Second)
 
 	cancel()
 }
@@ -48,10 +68,9 @@ func TestCellSimple(t *testing.T) {
 // TestCellChain provides a chained processing of some
 // events.
 func TestCellChain(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
 	ctx, cancel := context.WithCancel(context.Background())
 	topics := []string{}
-	sigc := make(chan interface{})
+	sigc := make(chan any)
 	upcaser := func(cell Cell, evt *Event, out Emitter) error {
 		upperTopic := strings.ToUpper(evt.Topic())
 		out.Emit(upperTopic)
@@ -68,24 +87,24 @@ func TestCellChain(t *testing.T) {
 	}
 	tbCollector := NewRequestBehavior(collector)
 	cCollector := newCell(ctx, "collector", meshStub{}, tbCollector, drop)
-	cCollector.subscribeTo(cUpcaser)
+	cCollector.SubscribeTo(cUpcaser)
 
-	cUpcaser.receive("one")
-	cUpcaser.receive("two")
-	cUpcaser.receive("three")
+	cUpcaser.Receive("one")
+	cUpcaser.Receive("two")
+	cUpcaser.Receive("three")
 
-	assert.WaitClosed(sigc, time.Second)
-	assert.Length(topics, 3)
-	assert.Equal(strings.Join(topics, " "), "ONE TWO THREE")
+	waitClosed(t, sigc, time.Second)
+	verify.Length(t, topics, 3)
+	verify.Equal(t, strings.Join(topics, " "), "ONE TWO THREE")
 
-	cCollector.unsubscribeFrom(cUpcaser)
+	cCollector.UnsubscribeFrom(cUpcaser)
 
-	cUpcaser.receive("FOUR")
-	cUpcaser.receive("FIVE")
-	cUpcaser.receive("SIX")
+	cUpcaser.Receive("FOUR")
+	cUpcaser.Receive("FIVE")
+	cUpcaser.Receive("SIX")
 
-	assert.Length(topics, 3)
-	assert.Equal(strings.Join(topics, " "), "ONE TWO THREE")
+	verify.Length(t, topics, 3)
+	verify.Equal(t, strings.Join(topics, " "), "ONE TWO THREE")
 
 	cancel()
 }
@@ -93,11 +112,10 @@ func TestCellChain(t *testing.T) {
 // TestCellAutoUnsubscribe verifies the automatic unsubscription
 // and information.
 func TestCellAutoUnsubscribe(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
 	ctx, cancel := context.WithCancel(context.Background())
 	failed := []*Event{}
 	collected := []*Event{}
-	sigc := make(chan interface{})
+	sigc := make(chan any)
 	forwarder := func(cell Cell, evt *Event, out Emitter) error {
 		return out.EmitEvent(evt)
 	}
@@ -111,8 +129,8 @@ func TestCellAutoUnsubscribe(t *testing.T) {
 		return out.EmitEvent(evt)
 	}
 	cFailer := newCell(ctx, "failer", meshStub{}, NewRequestBehavior(failer), drop)
-	cFailer.subscribeTo(cForwarderA)
-	cFailer.subscribeTo(cForwarderB)
+	cFailer.SubscribeTo(cForwarderA)
+	cFailer.SubscribeTo(cForwarderB)
 	collector := func(cell Cell, evt *Event, out Emitter) error {
 		collected = append(collected, evt)
 		if len(collected) == 3 {
@@ -121,32 +139,32 @@ func TestCellAutoUnsubscribe(t *testing.T) {
 		return nil
 	}
 	cCollector := newCell(ctx, "collector", meshStub{}, NewRequestBehavior(collector), drop)
-	cCollector.subscribeTo(cFailer)
+	cCollector.SubscribeTo(cFailer)
 
-	cForwarderA.receive("foo")
-	cForwarderB.receive("bar")
-	cForwarderA.receive("baz")
+	cForwarderA.Receive("foo")
+	cForwarderB.Receive("bar")
+	cForwarderA.Receive("baz")
 
-	assert.WaitClosed(sigc, time.Second)
+	waitClosed(t, sigc, time.Second)
 
-	cForwarderA.receive("dont-care")
-	cForwarderB.receive("dont-care")
+	cForwarderA.Receive("dont-care")
+	cForwarderB.Receive("dont-care")
 
-	foundc := make(chan interface{})
+	foundc := make(chan any)
 
 	for _, evt := range collected {
 		if evt.Topic() == TopicError {
 			var errpl PayloadCellError
 			err := evt.Payload(&errpl)
-			assert.NoError(err)
-			assert.Equal(errpl.CellName, "failer")
-			assert.Equal(errpl.Error, "done")
+			verify.NoError(t, err)
+			verify.Equal(t, errpl.CellName, "failer")
+			verify.Equal(t, errpl.Error, "done")
 			close(foundc)
 			break
 		}
 	}
 
-	assert.WaitClosed(foundc, time.Second, "error not found")
+	waitClosed(t, foundc, time.Second, "error not found")
 	cancel()
 }
 
@@ -169,7 +187,7 @@ func (ms meshStub) Unsubscribe(toName, fromName string) error {
 	return nil
 }
 
-func (ms meshStub) Emit(name, topic string, payloads ...interface{}) error {
+func (ms meshStub) Emit(name, topic string, payloads ...any) error {
 	return nil
 }
 

@@ -1,6 +1,6 @@
 // Tideland Go Cells - Mesh
 //
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
+// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
@@ -13,9 +13,12 @@
 // via events. Several useful behaviors are already provided with the behaviors
 // package.
 //
+// # Creating a Mesh
+//
 // New meshes are created with
 //
-//     msh := mesh.New()
+//     ctx := context.Background()
+//     msh := mesh.New(ctx)
 //
 // and cells are started with
 //
@@ -33,9 +36,37 @@
 // to multiple other subscribers and even circular subscriptions are
 // no problem. But handle with care.
 //
+// # Events and Type Safety
+//
 // Events from the outside are emitted using
 //
 //     msh.Emit("foo", "topic", 42)
+//
+// For type-safe event creation with metadata, use NewEventTyped:
+//
+//     evt, err := mesh.NewEventTyped("user-login", userPayload,
+//         mesh.WithTraceID("trace-123"),
+//         mesh.WithCorrelation("session-456"),
+//         mesh.WithCustom("source", "api-gateway"),
+//     )
+//
+// For type-safe payload extraction, use PayloadAs:
+//
+//     user, err := mesh.PayloadAs[User](evt)
+//
+// # Metadata
+//
+// All events automatically include metadata with a unique ID. You can add:
+// - TraceID: For distributed tracing
+// - Correlation: For correlating related events
+// - Custom fields: For application-specific metadata
+//
+// Access metadata with:
+//
+//     meta := evt.Metadata()
+//     fmt.Println(meta.ID, meta.TraceID, meta.Custom)
+//
+// # Emitters
 //
 // In case of many emits to one cell you can get an emitter
 // with
@@ -44,7 +75,7 @@
 //
 // and
 //
-//     emtrEmit(mesh.NewEvent("foo", "answer", 42))
+//     emtr.Emit("answer", 42)
 //
 package mesh // import "tideland.dev/go/cells/mesh"
 

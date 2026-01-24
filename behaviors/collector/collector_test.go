@@ -1,6 +1,6 @@
 // Tideland Go Cells - Behaviors - Collector - Unit Tests
 //
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
+// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"tideland.dev/go/audit/asserts"
+	"tideland.dev/go/asserts/verify"
 	"tideland.dev/go/audit/generators"
 
 	"tideland.dev/go/cells/behaviors/collector"
@@ -28,7 +28,6 @@ import (
 
 // TestSuccess verifies the successful usage of the collection behavior.
 func TestSuccess(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
 	generator := generators.New(generators.FixedRand())
 	processor := func(r mesh.EventSinkReader) (*mesh.Event, error) {
 		l := r.Len()
@@ -59,7 +58,7 @@ func TestSuccess(t *testing.T) {
 		out.Emit(collector.TopicProcess)
 		out.Emit(collector.TopicReset)
 	}, time.Second)
-	assert.NoError(err)
+	verify.NoError(t,err)
 }
 
 // EOF

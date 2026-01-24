@@ -1,11 +1,11 @@
-// Tideland Go Cells - Mesh
+// Tideland Go Cells - Mesh - Internal
 //
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
+// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
 
-package mesh // import "tideland.dev/go/cells/mesh"
+package internal // import "tideland.dev/go/cells/mesh/internal"
 
 //--------------------
 // IMPORT
@@ -25,33 +25,33 @@ import (
 // cellSet manages a set of cells.
 type cellSet struct {
 	mu    sync.RWMutex
-	cells map[*cell]struct{}
+	cells map[*CellImpl]struct{}
 }
 
 // newCellSet creates an empty cell set.
 func newCellSet() *cellSet {
 	return &cellSet{
-		cells: make(map[*cell]struct{}),
+		cells: make(map[*CellImpl]struct{}),
 	}
 }
 
 // add adds another cell to the set. Already added
 // ones are ignored.
-func (cs *cellSet) add(c *cell) {
+func (cs *cellSet) add(c *CellImpl) {
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
 	cs.cells[c] = struct{}{}
 }
 
 // remove deletes a cell from the set.
-func (cs *cellSet) remove(c *cell) {
+func (cs *cellSet) remove(c *CellImpl) {
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
 	delete(cs.cells, c)
 }
 
 // do perform f for each cell of the set.
-func (cs *cellSet) do(f func(c *cell) error) error {
+func (cs *cellSet) do(f func(c *CellImpl) error) error {
 	cs.mu.RLock()
 	defer cs.mu.RUnlock()
 	for c := range cs.cells {
@@ -66,28 +66,28 @@ func (cs *cellSet) do(f func(c *cell) error) error {
 // CELL
 //--------------------
 
-// cell runs a behevior networked with other cells.
-type cell struct {
+// Cell runs a behevior networked with other cells.
+type CellImpl struct {
 	mu       sync.RWMutex
 	active   atomic.Value
 	ctx      context.Context
 	name     string
-	mesh     Mesh
+	meshRef  Mesh
 	behavior Behavior
-	in       *stream
+	in       *streamImpl
 	input    *cellSet
 	output   *cellSet
 	drop     func()
 }
 
-// newCell starts a new cell working in the background.
-func newCell(ctx context.Context, name string, m Mesh, b Behavior, drop func()) *cell {
-	c := &cell{
+// NewCell starts a new cell working in the background.
+func NewCell(ctx context.Context, name string, m Mesh, b Behavior, drop func()) *CellImpl {
+	c := &CellImpl{
 		ctx:      ctx,
 		name:     name,
-		mesh:     m,
+		meshRef:  m,
 		behavior: b,
-		in:       newStream(),
+		in:       NewStream(),
 		input:    newCellSet(),
 		output:   newCellSet(),
 		drop:     drop,
@@ -97,50 +97,50 @@ func newCell(ctx context.Context, name string, m Mesh, b Behavior, drop func()) 
 	return c
 }
 
-// Context implements Cell.
-func (c *cell) Context() context.Context {
+// Context implements mesh.Cell.
+func (c *CellImpl) Context() context.Context {
 	return c.ctx
 }
 
-// Name implements Cell.
-func (c *cell) Name() string {
+// Name implements mesh.Cell.
+func (c *CellImpl) Name() string {
 	return c.name
 }
 
-// Mesh implements Cell.
-func (c *cell) Mesh() Mesh {
+// Mesh implements mesh.Cell.
+func (c *CellImpl) Mesh() Mesh {
 	return nil
 }
 
-// subscribeTo adds this cell to the out-streams of the
+// SubscribeTo adds this cell to the out-streams of the
 // given in-cell.
-func (c *cell) subscribeTo(ic *cell) {
+func (c *CellImpl) SubscribeTo(ic *CellImpl) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.input.add(ic)
 	ic.output.add(c)
 }
 
-// unsubscribeFrom removes this cell from the out-streams of the
+// UnsubscribeFrom removes this cell from the out-streams of the
 // given in-cell.
-func (c *cell) unsubscribeFrom(ic *cell) {
+func (c *CellImpl) UnsubscribeFrom(ic *CellImpl) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.input.remove(ic)
 	ic.output.remove(c)
 }
 
-// receive creates an passes an event to handle to the cell.
-func (c *cell) receive(topic string, payload ...interface{}) error {
+// Receive creates an passes an event to handle to the cell.
+func (c *CellImpl) Receive(topic string, payload ...any) error {
 	evt, err := NewEvent(topic, payload...)
 	if err != nil {
 		return err
 	}
-	return c.receiveEvent(evt)
+	return c.ReceiveEvent(evt)
 }
 
-// receiveEvent passes an event to handle to the cell.
-func (c *cell) receiveEvent(evt *Event) error {
+// ReceiveEvent passes an event to handle to the cell.
+func (c *CellImpl) ReceiveEvent(evt *Event) error {
 	if !c.active.Load().(bool) {
 		return errors.New("cell deactivated")
 	}
@@ -149,22 +149,22 @@ func (c *cell) receiveEvent(evt *Event) error {
 
 // shutdown deactivates the in-stream, unsubscribes from all cells
 // and tells the mesh that it's not available anymore.
-func (c *cell) shutdown() {
+func (c *CellImpl) shutdown() {
 	c.active.Store(false)
 	c.drop()
-	c.input.do(func(ic *cell) error {
+	c.input.do(func(ic *CellImpl) error {
 		ic.output.remove(c)
 		return nil
 	})
 }
 
-// Pull implements Receptor.
-func (c *cell) Pull() <-chan *Event {
+// Pull implements mesh.Receptor.
+func (c *CellImpl) Pull() <-chan *Event {
 	return c.in.Pull()
 }
 
-// Emit implements Emitter.
-func (c *cell) Emit(topic string, payloads ...interface{}) error {
+// Emit implements mesh.Emitter.
+func (c *CellImpl) Emit(topic string, payloads ...any) error {
 	evt, err := NewEvent(topic, payloads...)
 	if err != nil {
 		return err
@@ -172,11 +172,11 @@ func (c *cell) Emit(topic string, payloads ...interface{}) error {
 	return c.EmitEvent(evt)
 }
 
-// EmitEvent implements Emitter.
-func (c *cell) EmitEvent(evt *Event) error {
+// EmitEvent implements mesh.Emitter.
+func (c *CellImpl) EmitEvent(evt *Event) error {
 	evt.appendEmitter(c.name)
-	return c.output.do(func(oc *cell) error {
-		if err := oc.receiveEvent(evt); err != nil {
+	return c.output.do(func(oc *CellImpl) error {
+		if err := oc.ReceiveEvent(evt); err != nil {
 			return err
 		}
 		return nil
@@ -184,7 +184,7 @@ func (c *cell) EmitEvent(evt *Event) error {
 }
 
 // backend runs as goroutine and cares for the behavior.
-func (c *cell) backend() {
+func (c *CellImpl) backend() {
 	defer c.shutdown()
 	if err := c.behavior.Go(c, c, c); err != nil {
 		// Notify subscribers about error.

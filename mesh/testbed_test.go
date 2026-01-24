@@ -1,6 +1,6 @@
 // Tideland Go Cells - Mesh - Tests
 //
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
+// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"tideland.dev/go/audit/asserts"
+	"tideland.dev/go/asserts/verify"
 
 	"tideland.dev/go/cells/mesh"
 )
@@ -27,7 +27,6 @@ import (
 // TestTestbedSuccess verifies the successful working of the testbed
 // for behavior tests.
 func TestTestbedSuccess(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
 	forwarder := func(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
 		for {
 			select {
@@ -51,13 +50,12 @@ func TestTestbedSuccess(t *testing.T) {
 		out.Emit("two")
 		out.Emit("three")
 	}, time.Second)
-	assert.NoError(err)
+	verify.NoError(t,err)
 }
 
 // TestTestbedFail verifies the failing working of the testbed
 // for behavior tests.
 func TestTestbedFail(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
 	forwarder := func(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
 		for {
 			select {
@@ -81,12 +79,11 @@ func TestTestbedFail(t *testing.T) {
 		out.Emit("two")
 		out.Emit("three")
 	}, time.Second)
-	assert.ErrorContains(err, "test failed: must fail")
+	verify.ErrorContains(t,err, "test failed: must fail")
 }
 
 // TestTestbedMesh verifies the Mesh stubbing of the testbed.
 func TestTestbedMesh(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
 	mesher := func(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error {
 		for {
 			select {
@@ -97,24 +94,26 @@ func TestTestbedMesh(t *testing.T) {
 				case "go":
 					out.EmitEvent(evt)
 					err := cell.Mesh().Go("anything", nil)
-					assert.ErrorContains(err, "cell name 'anything' already used")
+					verify.ErrorContains(t, err, "cell name 'anything' already used")
 				case "subscribe":
 					out.EmitEvent(evt)
 					err := cell.Mesh().Subscribe("anything", "anything-else")
-					assert.ErrorContains(err, "emitter cell 'anything' does not exist")
+					verify.ErrorContains(t, err, "emitter cell 'anything' does not exist")
 				case "unsubscribe":
 					out.EmitEvent(evt)
 					err := cell.Mesh().Unsubscribe("anything", "anything-else")
-					assert.ErrorContains(err, "emitter cell 'anything' does not exist")
+					verify.ErrorContains(t, err, "emitter cell 'anything' does not exist")
 				case "emit":
 					out.EmitEvent(evt)
 					err := cell.Mesh().EmitEvent("anything", evt)
-					assert.ErrorContains(err, "cell 'anything' does not exist")
+					verify.ErrorContains(t, err, "cell 'anything' does not exist")
 				case "emitter":
 					out.EmitEvent(evt)
 					emtr, err := cell.Mesh().Emitter("anything")
-					assert.ErrorContains(err, "cell 'anything' does not exist")
-					assert.Nil(emtr)
+					verify.ErrorContains(t, err, "cell 'anything' does not exist")
+					if emtr != nil {
+						t.Fatalf("expected nil emitter, got %v", emtr)
+					}
 				}
 			}
 		}
@@ -134,7 +133,7 @@ func TestTestbedMesh(t *testing.T) {
 		out.Emit("emit")
 		out.Emit("emitter")
 	}, time.Second)
-	assert.NoError(err)
+	verify.NoError(t,err)
 }
 
 // EOF

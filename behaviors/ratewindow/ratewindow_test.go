@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"tideland.dev/go/audit/asserts"
+	"tideland.dev/go/asserts/verify"
 	"tideland.dev/go/audit/generators"
 
 	"tideland.dev/go/cells/behaviors/ratewindow"
@@ -28,21 +28,20 @@ import (
 
 // TestSuccess verifies the successful finding and processing of matching events.
 func TestSuccess(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
 	generator := generators.New(generators.FixedRand())
 	matcher := func(evt *mesh.Event) (bool, error) {
 		var payload int
 		err := evt.Payload(&payload)
-		assert.NoError(err)
+		verify.NoError(t,err)
 		return payload > 5, nil
 	}
-	processor := func(reader mesh.EventSinkReader) (interface{}, error) {
+	processor := func(reader mesh.EventSinkReader) (any, error) {
 		var count int
 		var sum int
 		doer := func(i int, evt *mesh.Event) error {
 			var payload int
 			err := evt.Payload(&payload)
-			assert.NoError(err)
+			verify.NoError(t,err)
 			count += 1
 			sum += payload
 			return nil
@@ -72,7 +71,7 @@ func TestSuccess(t *testing.T) {
 			out.Emit(topic, payload)
 		}
 	}, 10*time.Second)
-	assert.NoError(err)
+	verify.NoError(t,err)
 }
 
 // EOF

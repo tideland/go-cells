@@ -38,7 +38,7 @@ const (
 // be dropped, and CriterionClear when the collected events have to be
 // cleared for starting over. In case of CriterionDone it additionally
 // has to return a payload which will be emitted.
-type ComboCriterionFunc func(r mesh.EventSinkReader) (CriterionMatch, interface{}, error)
+type ComboCriterionFunc func(r mesh.EventSinkReader) (CriterionMatch, any, error)
 
 // CriterionMatch allows a combo criterion func to signal its
 // analysis rersult.

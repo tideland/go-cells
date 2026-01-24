@@ -1,6 +1,6 @@
 // Tideland Go Cells - Behaviors - Countdown - Unit Tests
 //
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
+// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"tideland.dev/go/audit/asserts"
+	"tideland.dev/go/asserts/verify"
 	"tideland.dev/go/audit/generators"
 
 	"tideland.dev/go/cells/behaviors/countdown"
@@ -28,7 +28,6 @@ import (
 
 // TestSuccess verifies the countdown of events.
 func TestSuccess(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
 	generator := generators.New(generators.FixedRand())
 	topics := []string{"a", "b", "c", "d", "e", "f", "g", "h", "i"}
 	count := 10
@@ -55,7 +54,7 @@ func TestSuccess(t *testing.T) {
 			out.Emit(topic)
 		}
 	}, time.Second)
-	assert.NoError(err)
+	verify.NoError(t,err)
 }
 
 // EOF

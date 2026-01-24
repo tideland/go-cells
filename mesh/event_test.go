@@ -1,6 +1,6 @@
 // Tideland Go Cells - Mesh - Tests
 //
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
+// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
@@ -15,7 +15,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"tideland.dev/go/audit/asserts"
+	"tideland.dev/go/asserts/verify"
 
 	"tideland.dev/go/cells/mesh"
 )
@@ -26,92 +26,88 @@ import (
 
 // TestEventSimple verifies events without payloads.
 func TestEventSimple(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
-
 	evt, err := mesh.NewEvent("")
-	assert.ErrorContains(err, "event needs topic")
-	assert.Nil(evt)
+	verify.ErrorContains(t, err, "event needs topic")
+	if evt != nil {
+		t.Fatalf("expected nil event, got %v", evt)
+	}
 
 	evt, err = mesh.NewEvent("test")
-	assert.NoError(err)
-	assert.Equal(evt.Topic(), "test")
-	assert.False(evt.HasPayload())
+	verify.NoError(t, err)
+	verify.Equal(t, evt.Topic(), "test")
+	verify.False(t, evt.HasPayload())
 }
 
 // TestEventPayload verifies events with one or more payloads.
 func TestEventPayload(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
-
 	payloadIn := []string{"a", "b", "c"}
 	payloadOutA := []string{}
 	evt, err := mesh.NewEvent("test", payloadIn)
-	assert.NoError(err)
-	assert.Equal(evt.Topic(), "test")
-	assert.True(evt.HasPayload())
+	verify.NoError(t, err)
+	verify.Equal(t, evt.Topic(), "test")
+	verify.True(t, evt.HasPayload())
 	err = evt.Payload(&payloadOutA)
-	assert.NoError(err)
-	assert.Length(payloadOutA, 3)
-	assert.Equal(payloadOutA, payloadIn)
+	verify.NoError(t, err)
+	verify.Length(t, payloadOutA, 3)
+	verify.SliceEqual(t, payloadOutA, payloadIn)
 
 	payloadOutB := []int{}
 	evt, err = mesh.NewEvent("test", 1, 2, 3, 4, 5)
-	assert.NoError(err)
-	assert.Equal(evt.Topic(), "test")
-	assert.True(evt.HasPayload())
+	verify.NoError(t, err)
+	verify.Equal(t, evt.Topic(), "test")
+	verify.True(t, evt.HasPayload())
 	err = evt.Payload(&payloadOutB)
-	assert.NoError(err)
-	assert.Length(payloadOutB, 5)
-	assert.Equal(payloadOutB, []int{1, 2, 3, 4, 5})
+	verify.NoError(t, err)
+	verify.Length(t, payloadOutB, 5)
+	verify.SliceEqual(t, payloadOutB, []int{1, 2, 3, 4, 5})
 
 	var payloadOutC string
 	evt, err = mesh.NewEvent("test", "payload")
-	assert.NoError(err)
-	assert.Equal(evt.Topic(), "test")
-	assert.True(evt.HasPayload())
+	verify.NoError(t, err)
+	verify.Equal(t, evt.Topic(), "test")
+	verify.True(t, evt.HasPayload())
 	err = evt.Payload(&payloadOutC)
-	assert.NoError(err)
-	assert.Equal(payloadOutC, "payload")
+	verify.NoError(t, err)
+	verify.Equal(t, payloadOutC, "payload")
 
 }
 
 // TestEventMarshaling verifies the event marshaling and unmarshaling.
 func TestEventMarshaling(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
-
 	evtIn, err := mesh.NewEvent("test")
-	assert.NoError(err)
+	verify.NoError(t, err)
 	data, err := json.Marshal(evtIn)
-	assert.NoError(err)
+	verify.NoError(t, err)
 
 	evtOut, err := mesh.NewEvent("empty")
-	assert.NoError(err)
+	verify.NoError(t, err)
 	err = json.Unmarshal(data, &evtOut)
-	assert.NoError(err)
-	assert.Equal(evtOut, evtIn)
+	verify.NoError(t, err)
+	verify.DeepEqual(t, evtOut, evtIn)
 
 	plEvtA, err := mesh.NewEvent("payload-a")
-	assert.NoError(err)
+	verify.NoError(t, err)
 	plEvtB, err := mesh.NewEvent("payload-b")
-	assert.NoError(err)
+	verify.NoError(t, err)
 	plEvtC, err := mesh.NewEvent("payload-c")
-	assert.NoError(err)
+	verify.NoError(t, err)
 
 	evtIn, err = mesh.NewEvent("test", plEvtA, plEvtB, plEvtC)
-	assert.NoError(err)
+	verify.NoError(t, err)
 	data, err = json.Marshal(evtIn)
-	assert.NoError(err)
+	verify.NoError(t, err)
 
 	evtOut, err = mesh.NewEvent("empty")
-	assert.NoError(err)
+	verify.NoError(t, err)
 	err = json.Unmarshal(data, &evtOut)
-	assert.NoError(err)
-	assert.Equal(evtOut, evtIn)
+	verify.NoError(t, err)
+	verify.DeepEqual(t, evtOut, evtIn)
 	pl := []*mesh.Event{}
 	err = evtOut.Payload(&pl)
-	assert.NoError(err)
-	assert.Equal(pl[0], plEvtA)
-	assert.Equal(pl[1], plEvtB)
-	assert.Equal(pl[2], plEvtC)
+	verify.NoError(t, err)
+	verify.DeepEqual(t, pl[0], plEvtA)
+	verify.DeepEqual(t, pl[1], plEvtB)
+	verify.DeepEqual(t, pl[2], plEvtC)
 }
 
 // EOF

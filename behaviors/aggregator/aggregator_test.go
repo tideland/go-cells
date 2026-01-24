@@ -1,6 +1,6 @@
 // Tideland Go Cells - Behaviors - Aggregator - Unit Test
 //
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
+// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"tideland.dev/go/audit/asserts"
+	"tideland.dev/go/asserts/verify"
 
 	"tideland.dev/go/cells/behaviors/aggregator"
 	"tideland.dev/go/cells/mesh"
@@ -28,14 +28,13 @@ import (
 
 // TestAggregatorBehavior tests the aggregator behavior.
 func TestAggregatorBehavior(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
 	count := 50
-	initializer := func() interface{} {
+	initializer := func() any {
 		return map[string]bool{
 			"initialized": true,
 		}
 	}
-	aggregatorFunc := func(aggregated interface{}, evt *mesh.Event) (interface{}, error) {
+	aggregatorFunc := func(aggregated any, evt *mesh.Event) (any, error) {
 		words := aggregated.(map[string]bool)
 		words[evt.Topic()] = true
 		return words, nil
@@ -68,7 +67,7 @@ func TestAggregatorBehavior(t *testing.T) {
 		out.Emit(aggregator.TopicAggregate)
 		out.Emit(aggregator.TopicReset)
 	}, time.Second)
-	assert.NoError(err)
+	verify.NoError(t,err)
 }
 
 // EOF

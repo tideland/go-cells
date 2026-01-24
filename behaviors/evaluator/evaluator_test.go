@@ -1,6 +1,6 @@
 // Tideland Go Cells - Behaviors - Evaluator - Unit Tests
 //
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
+// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"tideland.dev/go/audit/asserts"
+	"tideland.dev/go/asserts/verify"
 	"tideland.dev/go/audit/generators"
 
 	"tideland.dev/go/cells/behaviors/evaluator"
@@ -29,7 +29,6 @@ import (
 
 // TestSuccess verifies the successful evaluation of events.
 func TestSuccess(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
 	generator := generators.New(generators.FixedRand())
 	evaluateFunc := func(evt *mesh.Event) (float64, error) {
 		l := len(evt.Topic())
@@ -64,12 +63,11 @@ func TestSuccess(t *testing.T) {
 		out.Emit(evaluator.TopicEvaluate)
 		out.Emit(evaluator.TopicReset)
 	}, time.Second)
-	assert.NoError(err)
+	verify.NoError(t,err)
 }
 
 // TestFail verifies the wanted failing of the evaluation.
 func TestFail(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
 	evaluateFunc := func(evt *mesh.Event) (float64, error) {
 		if evt.Topic() == "ouch" {
 			return 0.0, errors.New("ouch")
@@ -94,7 +92,7 @@ func TestFail(t *testing.T) {
 	err := tb.Go(func(out mesh.Emitter) {
 		out.Emit("ouch")
 	}, time.Second)
-	assert.NoError(err)
+	verify.NoError(t,err)
 }
 
 // EOF

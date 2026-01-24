@@ -1,89 +1,11 @@
 // Tideland Go Cells - Mesh
 //
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
+// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
 
 package mesh // import "tideland.dev/go/cells/mesh"
-
-//--------------------
-// IMPORT
-//--------------------
-
-import (
-	"context"
-)
-
-//--------------------
-// MESH
-//--------------------
-
-// Mesh describes the interface to a mesh of a cell from the
-// perspective of a behavior.
-type Mesh interface {
-	// Go starts a cell using the given behavior.
-	Go(name string, b Behavior) error
-
-	// Subscribe subscribes the cell with receptor name to the cell
-	// with emitter name.
-	Subscribe(emitterName, receptorName string) error
-
-	// Unsubscribe unsubscribes the cell with receptor name from the cell
-	// with emitter name.
-	Unsubscribe(emitterName, receptorName string) error
-
-	// Emit creates an event and raises it to the named cell.
-	Emit(name, topic string, payloads ...interface{}) error
-
-	// EmitEvent raises an event to the named cell.
-	EmitEvent(name string, evt *Event) error
-
-	// Emitter returns a static emitter for the named cell.
-	Emitter(name string) (Emitter, error)
-}
-
-//--------------------
-// CELL
-//--------------------
-
-// Cell describes the interface to a cell from the perspective
-// of a behavior.
-type Cell interface {
-	// Context returns the context of mesh and cell.
-	Context() context.Context
-
-	// Name returns the name of the deployed cell running the
-	// behavior.
-	Name() string
-
-	// Mesh returns the mesh of the cell.
-	Mesh() Mesh
-}
-
-//--------------------
-// BEHAVIOR
-//--------------------
-
-// Behavior describes what cell implementations must understand.
-type Behavior interface {
-	// Go will be started as wrapped goroutine. It's the responsible
-	// of the implementation to run a select loop, receive incomming
-	// events via the input queue, and emit events via the output queue
-	// if needed.
-	//
-	//     for {
-	//         select {
-	//         case <-cell.Context().Done():
-	//             return nil
-	//         case evt := <-in.Pull():
-	//             ...
-	//             out.Emit("my-topic", myData)
-	//         }
-	//     }
-	//
-	Go(cell Cell, in Receptor, out Emitter) error
-}
 
 //--------------------
 // BEHAVIORS

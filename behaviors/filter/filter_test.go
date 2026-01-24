@@ -1,6 +1,6 @@
 // Tideland Go Cells - Behaviors - Filter - Unit Tests
 //
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
+// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"tideland.dev/go/audit/asserts"
+	"tideland.dev/go/asserts/verify"
 	"tideland.dev/go/audit/generators"
 
 	"tideland.dev/go/cells/behaviors/filter"
@@ -28,7 +28,6 @@ import (
 
 // TestIncludingSuccess verifies the successful including filter of events.
 func TestIncludingSuccess(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
 	generator := generators.New(generators.FixedRand())
 	filterFunc := func(evt *mesh.Event) (bool, error) {
 		// Filter wants to include short names.
@@ -51,12 +50,11 @@ func TestIncludingSuccess(t *testing.T) {
 			out.Emit(topic)
 		}
 	}, time.Second)
-	assert.NoError(err)
+	verify.NoError(t,err)
 }
 
 // TestExcludingSuccess verifies the successful excluding filter of events.
 func TestExcludingSuccess(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
 	generator := generators.New(generators.FixedRand())
 	filterFunc := func(evt *mesh.Event) (bool, error) {
 		// Filter wants to exclude short names.
@@ -79,7 +77,7 @@ func TestExcludingSuccess(t *testing.T) {
 			out.Emit(topic)
 		}
 	}, time.Second)
-	assert.NoError(err)
+	verify.NoError(t,err)
 }
 
 // EOF

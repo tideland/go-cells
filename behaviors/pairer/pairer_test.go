@@ -1,6 +1,6 @@
 // Tideland Go Cells - Behaviors - Pairer - Unit Tests
 //
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
+// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"tideland.dev/go/audit/asserts"
+	"tideland.dev/go/asserts/verify"
 	"tideland.dev/go/audit/generators"
 
 	"tideland.dev/go/cells/behaviors/pairer"
@@ -28,7 +28,6 @@ import (
 
 // TestSuccess verifies the successful finding of at least two matching.
 func TestSuccess(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
 	generator := generators.New(generators.FixedRand())
 	pairerFunc := func(fstEvt, sndEvt *mesh.Event) bool {
 		// Simply try to find the second event with the same
@@ -60,13 +59,12 @@ func TestSuccess(t *testing.T) {
 			out.Emit(topic)
 		}
 	}, 5*time.Second)
-	assert.NoError(err)
+	verify.NoError(t,err)
 }
 
 // TestFailOneHit verifies the failing of finding a pair after already
 // one has been found.
 func TestFailOneHit(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
 	generator := generators.New(generators.FixedRand())
 	pairerFunc := func(fstEvt, sndEvt *mesh.Event) bool {
 		// Only find first one.
@@ -93,12 +91,11 @@ func TestFailOneHit(t *testing.T) {
 			out.Emit(topic)
 		}
 	}, time.Second)
-	assert.NoError(err)
+	verify.NoError(t,err)
 }
 
 // TestFailNoHit verifies the failing of finding any pair.
 func TestFailNoHit(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
 	generator := generators.New(generators.FixedRand())
 	pairerFunc := func(fstEvt, sndEvt *mesh.Event) bool {
 		// Never find any one.
@@ -118,7 +115,7 @@ func TestFailNoHit(t *testing.T) {
 			out.Emit(topic)
 		}
 	}, time.Second)
-	assert.NoError(err)
+	verify.NoError(t,err)
 }
 
 // EOF

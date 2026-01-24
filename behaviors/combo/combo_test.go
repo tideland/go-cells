@@ -1,6 +1,6 @@
 // Tideland Go Cells - Behaviors - Combo - Unit Tests
 //
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
+// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"tideland.dev/go/audit/asserts"
+	"tideland.dev/go/asserts/verify"
 	"tideland.dev/go/audit/generators"
 
 	"tideland.dev/go/cells/behaviors/combo"
@@ -28,11 +28,10 @@ import (
 
 // TestSuccess verifies the successful double finding of a topic.
 func TestSuccess(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
 	generator := generators.New(generators.FixedRand())
 	topics := generator.Words(50)
 	wanted := "test-topic"
-	matcher := func(r mesh.EventSinkReader) (combo.CriterionMatch, interface{}, error) {
+	matcher := func(r mesh.EventSinkReader) (combo.CriterionMatch, any, error) {
 		// Matcher tries to find the wanted topic twice. When found twice
 		// the distance will be returned.
 		var found []int
@@ -83,10 +82,10 @@ func TestSuccess(t *testing.T) {
 				topic = generator.OneStringOf(topics...)
 			}
 			err := out.Emit(topic)
-			assert.NoError(err)
+			verify.NoError(t,err)
 		}
 	}, time.Second)
-	assert.NoError(err)
+	verify.NoError(t,err)
 }
 
 // EOF

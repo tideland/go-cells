@@ -1,6 +1,6 @@
 // Tideland Go Cells - Behaviors - Counter - Unit Tests
 //
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
+// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"tideland.dev/go/audit/asserts"
+	"tideland.dev/go/asserts/verify"
 	"tideland.dev/go/audit/generators"
 
 	"tideland.dev/go/cells/behaviors/counter"
@@ -29,7 +29,6 @@ import (
 
 // TestSuccess tests the successful counting of events and resetting the counters.
 func TestSuccess(t *testing.T) {
-	assert := asserts.NewTesting(t, asserts.FailStop)
 	generator := generators.New(generators.FixedRand())
 	topics := []string{"alpha", "bravo", "charly", "delta", "echo"}
 	counteval := func(evt *mesh.Event) ([]string, error) {
@@ -76,7 +75,7 @@ func TestSuccess(t *testing.T) {
 		out.Emit(counter.TopicReset)
 		out.Emit(counter.TopicCounters)
 	}, time.Second)
-	assert.NoError(err)
+	verify.NoError(t,err)
 }
 
 // EOF
