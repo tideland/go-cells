@@ -5,12 +5,12 @@
 package internal
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
+
+	"tideland.dev/go/uuid"
 )
 
 // Metadata contains additional information about an event for tracing,
@@ -58,12 +58,8 @@ func WithCustom(key string, value any) MetadataOption {
 
 // generateID generates a random unique ID for an event.
 func generateID() string {
-	b := make([]byte, 16)
-	if _, err := rand.Read(b); err != nil {
-		// Fallback to timestamp-based ID if random fails
-		return fmt.Sprintf("%d", time.Now().UnixNano())
-	}
-	return hex.EncodeToString(b)
+	id := uuid.NewV7()
+	return id.String()
 }
 
 // Event transports a topic and a payload a cell can process. The

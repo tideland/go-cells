@@ -2,5 +2,5 @@ golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8 h1:aAcj0Da7eBAtrTp03QXWvm88p
 golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8/go.mod h1:CQ1k9gNrJ50XIzaKCRR2hssIjF07kZFEiieALBM/ARQ=
 tideland.dev/go/asserts v1.0.0 h1:4FzuK0M3H9xloZnig0ZnbLlmIXcwv5GTUnY1N++J4KI=
 tideland.dev/go/asserts v1.0.0/go.mod h1:/LCqoNW6o4If6EcJD9U61xdIIsA8zv9J5kI/SmlVrMM=
-tideland.dev/go/audit v0.7.0 h1:lr4LkNu7i5qLJuqQ6lUfnt0J09anZNfrdXdB1I9JlTs=
-tideland.dev/go/audit v0.7.0/go.mod h1:Jua+IB3KgAC7fbuZ1YHT7gKhwpiTOcn3Q7AOCQsrro8=
+tideland.dev/go/uuid v1.0.0 h1:8sCPiPa3ozGRDQnD3/WyC6syxTXoHOrcxtFEO6FvVxI=
+tideland.dev/go/uuid v1.0.0/go.mod h1:z3MWO2GJ+zqHv7lSti/LFC/BRweb+E9kRA3NfrFECqY=
