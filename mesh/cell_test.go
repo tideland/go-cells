@@ -1,15 +1,8 @@
-// Tideland Go Cells - Mesh - Tests
-//
-// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package mesh // import "tideland.dev/go/cells/mesh"
-
-//--------------------
-// IMPORTS
-//--------------------
+package mesh
 
 import (
 	"context"
@@ -20,10 +13,6 @@ import (
 
 	"tideland.dev/go/asserts/verify"
 )
-
-//--------------------
-// HELPERS
-//--------------------
 
 // waitClosed waits for a channel to close or times out.
 func waitClosed(t *testing.T, ch chan any, timeout time.Duration, msgAndArgs ...any) {
@@ -41,10 +30,6 @@ func waitClosed(t *testing.T, ch chan any, timeout time.Duration, msgAndArgs ...
 		t.Fatalf("%s", msg)
 	}
 }
-
-//--------------------
-// TESTS
-//--------------------
 
 // TestCellSimple provides a simple processing of some
 // events.
@@ -168,10 +153,6 @@ func TestCellAutoUnsubscribe(t *testing.T) {
 	cancel()
 }
 
-//--------------------
-// STUBS
-//--------------------
-
 // meshStub simulates the mesh for the cells.
 type meshStub struct{}
 
@@ -202,5 +183,3 @@ func (ms meshStub) Emitter(name string) (Emitter, error) {
 // drop simulates the callback to notify the
 // mesh of the termination of a cell.
 var drop = func() {}
-
-// EOF

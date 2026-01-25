@@ -1,23 +1,12 @@
-// Tideland Go Cells - Behaviors - Counter
-//
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package counter // import "tideland.dev/go/cells/behaviors/counter"
-
-//--------------------
-// IMPORTS
-//--------------------
+package counter
 
 import (
 	"tideland.dev/go/cells/mesh"
 )
-
-//--------------------
-// TOPICS
-//--------------------
 
 const (
 	TopicCounters     = "counters!"
@@ -26,17 +15,9 @@ const (
 	TopicResetDone    = "reset-done"
 )
 
-//--------------------
-// HELPER
-//--------------------
-
 // CounterEvaluationFunc analyzes the passed event and returns, which counters
 // shall be incremented.
 type CounterEvaluationFunc func(evt *mesh.Event) ([]string, error)
-
-//--------------------
-// BEHAVIOR
-//--------------------
 
 // Behavior evaluates incoming events with a given CounterEvaluationFunc. This
 // function decides by returning a number of identifiers, which counter will
@@ -84,5 +65,3 @@ func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error 
 		}
 	}
 }
-
-// EOF

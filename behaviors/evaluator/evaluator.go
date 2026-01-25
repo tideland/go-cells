@@ -1,15 +1,8 @@
-// Tideland Go Cells - Behaviors - Evaluator
-//
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package evaluator // import "tideland.dev/go/cells/behaviors/evaluator"
-
-//--------------------
-// IMPORTS
-//--------------------
+package evaluator
 
 import (
 	"sort"
@@ -17,20 +10,12 @@ import (
 	"tideland.dev/go/cells/mesh"
 )
 
-//--------------------
-// TOPICS
-//--------------------
-
 const (
 	TopicEvaluate       = "evaluate!"
 	TopicEvaluationDone = "evaluation-done"
 	TopicReset          = "reset!"
 	TopicResetDone      = "reset-done"
 )
-
-//--------------------
-// HELPER
-//--------------------
 
 // EvaluationFunc is a function returning a rating for each received event.
 type EvaluationFunc func(evt *mesh.Event) (float64, error)
@@ -43,10 +28,6 @@ type Evaluation struct {
 	AvgRating float64
 	MedRating float64
 }
-
-//--------------------
-// BEHAVIOR
-//--------------------
 
 // Behavior evaluations each event using a given function, which returns
 // a rating. The behavior counts these, looks for minimum and maximum rate,
@@ -131,5 +112,3 @@ func (b *Behavior) evaluateRatings() Evaluation {
 
 	return evaluation
 }
-
-// EOF

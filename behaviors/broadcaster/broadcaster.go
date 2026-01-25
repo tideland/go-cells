@@ -1,23 +1,12 @@
-// Tideland Go Cells - Behaviors - Broadcaster
-//
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package broadcaster // import "tideland.dev/go/cells/behaviors/broadcaster"
-
-//--------------------
-// IMPORTS
-//--------------------
+package broadcaster
 
 import (
 	"tideland.dev/go/cells/mesh"
 )
-
-//--------------------
-// BEHAVIOR
-//--------------------
 
 // Behavior broadcasts all received events without change to all subscribers.
 type Behavior struct{}
@@ -42,5 +31,3 @@ func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error 
 		}
 	}
 }
-
-// EOF

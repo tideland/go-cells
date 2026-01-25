@@ -1,23 +1,12 @@
-// Tideland Go Cells - Behaviors - Filter
-//
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package filter // import "tideland.dev/go/cells/behaviors/filter"
-
-//--------------------
-// IMPORTS
-//--------------------
+package filter
 
 import (
 	"tideland.dev/go/cells/mesh"
 )
-
-//--------------------
-// TOPICS
-//--------------------
 
 const (
 	TopicEvaluate       = "evaluate!"
@@ -25,10 +14,6 @@ const (
 	TopicReset          = "reset!"
 	TopicResetDone      = "reset-done"
 )
-
-//--------------------
-// HELPER
-//--------------------
 
 // FilterFunc defines how events are filtered for including or excluding.
 type FilterFunc func(event *mesh.Event) (bool, error)
@@ -41,10 +26,6 @@ const (
 	includingMode mode = iota
 	excludingMode
 )
-
-//--------------------
-// BEHAVIOR
-//--------------------
 
 // Behavior provides a behavior allowing to filter the stream of incomming
 // events in a user defined was. The way instantiating it defines if the
@@ -98,5 +79,3 @@ func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error 
 		}
 	}
 }
-
-// EOF

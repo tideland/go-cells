@@ -1,30 +1,19 @@
-// Tideland Go Cells - Behaviors - Mapper - Unit Tests
-//
-// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package mapper_test // import "tideland.dev/go/cells/behaviors/mapper"
-
-//--------------------
-// IMPORTS
-//--------------------
+package mapper_test
 
 import (
 	"strings"
 	"testing"
 	"time"
 
+	"tideland.dev/go/asserts/generators"
 	"tideland.dev/go/asserts/verify"
-	"tideland.dev/go/audit/generators"
 	"tideland.dev/go/cells/behaviors/mapper"
 	"tideland.dev/go/cells/mesh"
 )
-
-//--------------------
-// TESTS
-//--------------------
 
 // TestSuccess verifies mapping of events by upper-casing their payload.
 func TestSuccess(t *testing.T) {
@@ -61,7 +50,5 @@ func TestSuccess(t *testing.T) {
 			out.Emit("map", []string{orig, orig})
 		}
 	}, time.Second)
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 }
-
-// EOF

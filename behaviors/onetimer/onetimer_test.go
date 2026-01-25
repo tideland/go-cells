@@ -1,15 +1,8 @@
-// Tideland Go Cells - Behaviors - Unit Tests - One-Timer
-//
-// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package onetimer_test // import "tideland.dev/go/cells/behaviors/onetimer"
-
-//--------------------
-// IMPORTS
-//--------------------
+package onetimer_test
 
 import (
 	"testing"
@@ -21,16 +14,12 @@ import (
 	"tideland.dev/go/cells/mesh"
 )
 
-//--------------------
-// TESTS
-//--------------------
-
 // TestSuccess verifies the
 func TestSuccess(t *testing.T) {
 	count := 0
 	oneTime := func(evt *mesh.Event, out mesh.Emitter) error {
 		count++
-		verify.True(t,count < 2)
+		verify.True(t, count < 2)
 		out.EmitEvent(evt)
 		return nil
 	}
@@ -50,7 +39,5 @@ func TestSuccess(t *testing.T) {
 		out.Emit("b")
 		out.Emit("c")
 	}, time.Second)
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 }
-
-// EOF

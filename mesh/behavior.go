@@ -1,20 +1,13 @@
-// Tideland Go Cells - Mesh
-//
-// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package mesh // import "tideland.dev/go/cells/mesh"
-
-//--------------------
-// BEHAVIORS
-//--------------------
+package mesh
 
 // BehaviorFunc simplifies implementation of a behavior when only
 // one function is needed. It can be deployed via
 //
-//     myMesh.Go("my-name", BehaviorFunc(myFunc))
+//	myMesh.Go("my-name", BehaviorFunc(myFunc))
 type BehaviorFunc func(cell Cell, in Receptor, out Emitter) error
 
 // Go implements Behavior.
@@ -53,5 +46,3 @@ func (rb RequestBehavior) Go(cell Cell, in Receptor, out Emitter) error {
 		}
 	}
 }
-
-// EOF

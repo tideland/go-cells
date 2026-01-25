@@ -1,23 +1,12 @@
-// Tideland Go Cells - Behaviors - Aggregator
-//
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package aggregator // import "tideland.dev/go/cells/behaviors/aggregator"
-
-//--------------------
-// IMPORTS
-//--------------------
+package aggregator
 
 import (
 	"tideland.dev/go/cells/mesh"
 )
-
-//--------------------
-// TOPICS
-//--------------------
 
 const (
 	TopicAggregate     = "aggregate!"
@@ -26,17 +15,9 @@ const (
 	TopicResetDone     = "reset-done"
 )
 
-//--------------------
-// HELPER
-//--------------------
-
 // AggregatorFunc is a function receiving the current status payload
 // and event and returns the next status payload.
 type AggregatorFunc func(status any, evt *mesh.Event) (any, error)
-
-//--------------------
-// BEHAVIOR
-//--------------------
 
 // Behavior provides a behavior which aggregates the stream of events with
 // a given function. A received "reset!" topic resets the status.
@@ -93,5 +74,3 @@ func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error 
 		}
 	}
 }
-
-// EOF

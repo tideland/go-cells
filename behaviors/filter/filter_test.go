@@ -1,30 +1,19 @@
-// Tideland Go Cells - Behaviors - Filter - Unit Tests
-//
-// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package filter_test // import "tideland.dev/go/cells/behaviors/filter"
-
-//--------------------
-// IMPORTS
-//--------------------
+package filter_test
 
 import (
 	"testing"
 	"time"
 
+	"tideland.dev/go/asserts/generators"
 	"tideland.dev/go/asserts/verify"
-	"tideland.dev/go/audit/generators"
 
 	"tideland.dev/go/cells/behaviors/filter"
 	"tideland.dev/go/cells/mesh"
 )
-
-//--------------------
-// TESTS
-//--------------------
 
 // TestIncludingSuccess verifies the successful including filter of events.
 func TestIncludingSuccess(t *testing.T) {
@@ -50,7 +39,7 @@ func TestIncludingSuccess(t *testing.T) {
 			out.Emit(topic)
 		}
 	}, time.Second)
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 }
 
 // TestExcludingSuccess verifies the successful excluding filter of events.
@@ -77,7 +66,5 @@ func TestExcludingSuccess(t *testing.T) {
 			out.Emit(topic)
 		}
 	}, time.Second)
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 }
-
-// EOF

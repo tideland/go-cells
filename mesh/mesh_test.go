@@ -1,15 +1,8 @@
-// Tideland Go Cells - Mesh - Tests
-//
-// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package mesh_test // import "tideland.dev/go/cells/mesh"
-
-//--------------------
-// IMPORTS
-//--------------------
+package mesh_test
 
 import (
 	"context"
@@ -21,10 +14,6 @@ import (
 
 	"tideland.dev/go/cells/mesh"
 )
-
-//--------------------
-// HELPERS
-//--------------------
 
 // wait waits for a channel to receive a specific value or times out.
 func wait(t *testing.T, ch chan any, expected any, timeout time.Duration, msgAndArgs ...any) {
@@ -45,16 +34,12 @@ func wait(t *testing.T, ch chan any, expected any, timeout time.Duration, msgAnd
 	}
 }
 
-//--------------------
-// TESTS
-//--------------------
-
 // TestNewMesh verifies the simple creation of a mesh.
 func TestNewMesh(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	msh := mesh.New(ctx)
 
-	verify.NotNil(t,msh)
+	verify.NotNil(t, msh)
 
 	cancel()
 }
@@ -71,7 +56,7 @@ func TestMeshGo(t *testing.T) {
 
 	msh.Go("testing", mesh.BehaviorFunc(behaviorFunc))
 
-	wait(t,sigc, "testing", time.Second)
+	wait(t, sigc, "testing", time.Second)
 
 	cancel()
 }
@@ -109,49 +94,49 @@ func TestMeshSubscriptions(t *testing.T) {
 
 	// Both cells do not exist.
 	err := msh.Subscribe("forwarder", "collector-a")
-	verify.ErrorContains(t,err, "cell 'forwarder' does not exist")
+	verify.ErrorContains(t, err, "cell 'forwarder' does not exist")
 
 	msh.Go("forwarder", mesh.BehaviorFunc(forwardFunc))
 
 	// One cell do not exist.
 	err = msh.Subscribe("forwarder", "collector-a")
-	verify.ErrorContains(t,err, "cell 'collector-a' does not exist")
+	verify.ErrorContains(t, err, "cell 'collector-a' does not exist")
 
 	// Both cells exist.
 	msh.Go("collector-a", mesh.BehaviorFunc(collectFunc))
 	err = msh.Subscribe("forwarder", "collector-a")
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 
 	msh.Emit("forwarder", "one")
 	msh.Emit("forwarder", "two")
 	msh.Emit("forwarder", "three")
 
-	wait(t,sigc, 3, time.Second)
+	wait(t, sigc, 3, time.Second)
 
 	// Unsubscribe one collector but subscribe a new one.
 	err = msh.Unsubscribe("forwarder", "collector-a")
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 	msh.Go("collector-b", mesh.BehaviorFunc(collectFunc))
 	err = msh.Subscribe("forwarder", "collector-b")
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 
 	msh.Emit("forwarder", "one")
 	msh.Emit("forwarder", "two")
 	msh.Emit("forwarder", "three")
 
-	wait(t,sigc, 3, time.Second)
+	wait(t, sigc, 3, time.Second)
 
 	// Unsubscribe not existing cell.
 	err = msh.Unsubscribe("forwarder", "dont-exist")
-	verify.ErrorContains(t,err, "cell 'dont-exist' does not exist")
+	verify.ErrorContains(t, err, "cell 'dont-exist' does not exist")
 
 	// Unsubscribe not subscribed cell.
 	err = msh.Unsubscribe("forwarder", "collector-a")
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 
 	// Unsubscribe subscribed cell.
 	err = msh.Unsubscribe("forwarder", "collector-b")
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 
 	cancel()
 }
@@ -176,18 +161,18 @@ func TestMeshEmit(t *testing.T) {
 	}
 	msh := mesh.New(ctx)
 	err := msh.Emit("testing", "one")
-	verify.ErrorContains(t,err, "cell 'testing' does not exist")
+	verify.ErrorContains(t, err, "cell 'testing' does not exist")
 
 	msh.Go("testing", mesh.BehaviorFunc(behaviorFunc))
 
 	err = msh.Emit("testing", "one")
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 
 	msh.Emit("testing", "two")
 	msh.Emit("testing", "three")
 	msh.Emit("testing", "get-i")
 
-	wait(t,sigc, 4, time.Second)
+	wait(t, sigc, 4, time.Second)
 
 	cancel()
 }
@@ -212,18 +197,18 @@ func TestMeshEmitter(t *testing.T) {
 	}
 	msh := mesh.New(ctx)
 	emtr, err := msh.Emitter("testing")
-	verify.ErrorContains(t,err, "cell 'testing' does not exist")
+	verify.ErrorContains(t, err, "cell 'testing' does not exist")
 
 	msh.Go("testing", mesh.BehaviorFunc(behaviorFunc))
 	emtr, err = msh.Emitter("testing")
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 
 	emtr.Emit("one")
 	emtr.Emit("two")
 	emtr.Emit("three")
 	emtr.Emit("get-i")
 
-	wait(t,sigc, 4, time.Second)
+	wait(t, sigc, 4, time.Second)
 
 	cancel()
 }
@@ -249,11 +234,11 @@ func TestMeshStoppedCell(t *testing.T) {
 	msh := mesh.New(ctx)
 	msh.Go("countdown", mesh.BehaviorFunc(behaviorFunc))
 
-	verify.NoError(t,msh.Emit("countdown", "one"))
-	verify.NoError(t,msh.Emit("countdown", "two"))
-	verify.NoError(t,msh.Emit("countdown", "three"))
-	verify.ErrorContains(t,msh.Emit("countdown", "four"), "timeout")
-	verify.ErrorContains(t,msh.Emit("countdown", "five"), "cell 'countdown' does not exist")
+	verify.NoError(t, msh.Emit("countdown", "one"))
+	verify.NoError(t, msh.Emit("countdown", "two"))
+	verify.NoError(t, msh.Emit("countdown", "three"))
+	verify.ErrorContains(t, msh.Emit("countdown", "four"), "timeout")
+	verify.ErrorContains(t, msh.Emit("countdown", "five"), "cell 'countdown' does not exist")
 
 	cancel()
 }
@@ -309,7 +294,7 @@ func TestMeshEnitters(t *testing.T) {
 	msh.Emit("first", "re-emit")
 	msh.Emit("first", "done")
 
-	wait(t,sigc, map[string]bool{
+	wait(t, sigc, map[string]bool{
 		"first :: anything :: /":            true,
 		"first :: emit :: /":                true,
 		"first :: re-emit :: /":             true,
@@ -323,5 +308,3 @@ func TestMeshEnitters(t *testing.T) {
 
 	cancel()
 }
-
-// EOF

@@ -1,23 +1,12 @@
-// Tideland Go Cells - Behaviors - Collector
-//
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package collector // import "tideland.dev/go/cells/behaviors/collector"
-
-//--------------------
-// IMPORTS
-//--------------------
+package collector
 
 import (
 	"tideland.dev/go/cells/mesh"
 )
-
-//--------------------
-// TOPICS
-//--------------------
 
 const (
 	TopicProcess   = "process!"
@@ -25,16 +14,8 @@ const (
 	TopicResetDone = "reset-done"
 )
 
-//--------------------
-// HELPER
-//--------------------
-
 // CollectionProcessorFunc is used to process collected events.
 type CollectionProcessorFunc func(r mesh.EventSinkReader) (*mesh.Event, error)
-
-//--------------------
-// BEHAVIOR
-//--------------------
 
 // Behavior collects a wanted number of events. If the number grows too much the oldest
 // one will be deleted. When it's receiving an event with "process!" topic it calls the
@@ -81,5 +62,3 @@ func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error 
 		}
 	}
 }
-
-// EOF

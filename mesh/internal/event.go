@@ -1,15 +1,8 @@
-// Tideland Go Cells - Mesh - Internal
-//
-// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package internal // import "tideland.dev/go/cells/mesh/internal"
-
-//--------------------
-// IMPORTS
-//--------------------
+package internal
 
 import (
 	"crypto/rand"
@@ -19,10 +12,6 @@ import (
 	"strings"
 	"time"
 )
-
-//--------------------
-// METADATA
-//--------------------
 
 // Metadata contains additional information about an event for tracing,
 // correlation, and custom data.
@@ -76,10 +65,6 @@ func generateID() string {
 	}
 	return hex.EncodeToString(b)
 }
-
-//--------------------
-// EVENT
-//--------------------
 
 // Event transports a topic and a payload a cell can process. The
 // payload is anything marshalled into JSON and will be unmarshalled
@@ -185,10 +170,10 @@ func (evt Event) Timestamp() time.Time {
 // where an event has been emitted or simply re-emitted.
 // The path layouts are
 //
-//     / is emitted via the mesh,
-//     /foo is emitted by mesh and re-emitted by foo,
-//     foo is emitted by foo,
-//     foo/bar is emitted by foo and re-emitted by bar.
+//	/ is emitted via the mesh,
+//	/foo is emitted by mesh and re-emitted by foo,
+//	foo is emitted by foo,
+//	foo/bar is emitted by foo and re-emitted by bar.
 //
 // So also longer paths like /foo/bar/baz are possible.
 func (evt Event) Emitters() string {
@@ -302,5 +287,3 @@ func (evt *Event) initEmitters() {
 func (evt *Event) appendEmitter(name string) {
 	evt.emitters = append(evt.emitters, name)
 }
-
-// EOF

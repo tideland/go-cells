@@ -1,24 +1,13 @@
-// Tideland Go Cells - Mesh - Internal
-//
-// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package internal // import "tideland.dev/go/cells/mesh/internal"
-
-//--------------------
-// IMPORTS
-//--------------------
+package internal
 
 import (
 	"context"
 	"fmt"
 )
-
-//--------------------
-// TESTBED MESH
-//--------------------
 
 // TestbedMesh implements the Mesh interface.
 type testbedMeshImpl struct{}
@@ -57,10 +46,6 @@ func (tbm testbedMeshImpl) Emitter(name string) (Emitter, error) {
 	return nil, fmt.Errorf("cell '%s' does not exist", name)
 }
 
-//--------------------
-// TESTBED CELL
-//--------------------
-
 // TestbedCell runs the behavior and provides the needed interfaces.
 type testbedCellImpl struct {
 	ctx      context.Context
@@ -70,7 +55,7 @@ type testbedCellImpl struct {
 }
 
 // NewTestbedCell initializes the testbed cell and spawns the goroutine.
-func NewTestbedCell(ctx context.Context, behavior Behavior, pusher func(evt *Event)) interface{Push(evt *Event) error} {
+func NewTestbedCell(ctx context.Context, behavior Behavior, pusher func(evt *Event)) interface{ Push(evt *Event) error } {
 	tbc := &testbedCellImpl{
 		ctx:      ctx,
 		behavior: behavior,
@@ -146,10 +131,6 @@ func (tbc *testbedCellImpl) backend() {
 	}
 }
 
-//--------------------
-// TESTBED EMITTER
-//--------------------
-
 // TestbedEmitter allows the testbed runner to emit events to the testbed.
 type testbedEmitterImpl struct {
 	cell *testbedCellImpl
@@ -176,5 +157,3 @@ func (tbe *testbedEmitterImpl) EmitEvent(evt *Event) error {
 	evt.initEmitters()
 	return tbe.cell.Push(evt)
 }
-
-// EOF

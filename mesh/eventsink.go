@@ -1,25 +1,14 @@
-// Tideland Go Cells - Mesh
-//
-// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package mesh // import "tideland.dev/go/cells/mesh"
-
-//--------------------
-// IMPORTS
-//--------------------
+package mesh
 
 import (
 	"time"
 
 	"tideland.dev/go/cells/mesh/internal"
 )
-
-//--------------------
-// EVENT SINK INTERFACES
-//--------------------
 
 // EventSinkDoFunc is used when looking over the collected events.
 type EventSinkDoFunc = internal.EventSinkDoFunc
@@ -35,10 +24,6 @@ type EventSinkReader = internal.EventSinkReader
 // in a sink for processing tasks. It only has reading access to the sink.
 type EventSinkProcessor func(reader EventSinkReader) (any, error)
 
-//--------------------
-// EVENT SINK
-//--------------------
-
 // EventSink combines changer and reader. It stores a number of ordered events by
 // adding them at the end. To be used in behaviors for collecting sets of events
 // and operate on them.
@@ -48,10 +33,6 @@ type EventSink = internal.EventSink
 func NewEventSink(max int, evts ...*Event) EventSink {
 	return internal.NewEventSink(max, evts...)
 }
-
-//--------------------
-// EVENT SINK FUNCTIONS
-//--------------------
 
 // EventSinkFilterFunc defines functions returning true for matching events.
 type EventSinkFilterFunc func(i int, evt *Event) (bool, error)
@@ -118,5 +99,3 @@ func EventSinkDuration(r EventSinkReader) time.Duration {
 	}
 	return last.Timestamp().Sub(first.Timestamp())
 }
-
-// EOF

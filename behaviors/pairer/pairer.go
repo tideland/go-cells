@@ -1,15 +1,8 @@
-// Tideland Go Cells - Behaviors - Pairer
-//
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package pairer // import "tideland.dev/go/cells/behaviors/pairer"
-
-//--------------------
-// IMPORTS
-//--------------------
+package pairer
 
 import (
 	"time"
@@ -17,18 +10,10 @@ import (
 	"tideland.dev/go/cells/mesh"
 )
 
-//--------------------
-// CONSTANTS
-//--------------------
-
 const (
 	TopicMatch   = "pairer:match"
 	TopicTimeout = "pairer:timeout"
 )
-
-//--------------------
-// HELPER
-//--------------------
 
 // PairerFunc is used by the pair behavior and has to return true, if
 // the given event matches a criterion. The first event is the already
@@ -41,10 +26,6 @@ type Pair struct {
 	First  *mesh.Event
 	Second *mesh.Event
 }
-
-//--------------------
-// BEHAVIOR
-//--------------------
 
 // Behavior provides a behavior checking a stream of incoming event for
 // matching a wanted pair crterion. This is defined as pairer function
@@ -100,5 +81,3 @@ func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error 
 		}
 	}
 }
-
-// EOF

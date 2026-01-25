@@ -1,30 +1,19 @@
-// Tideland Go Cells - Behaviors - Rate Window Evaluator - Unit Tests
-//
-// Copyright (C) 2010-2022 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package ratewindow_test // import "tideland.dev/go/cells/behaviors/ratewindow"
-
-//--------------------
-// IMPORTS
-//--------------------
+package ratewindow_test
 
 import (
 	"testing"
 	"time"
 
+	"tideland.dev/go/asserts/generators"
 	"tideland.dev/go/asserts/verify"
-	"tideland.dev/go/audit/generators"
 
 	"tideland.dev/go/cells/behaviors/ratewindow"
 	"tideland.dev/go/cells/mesh"
 )
-
-//--------------------
-// TESTS
-//--------------------
 
 // TestSuccess verifies the successful finding and processing of matching events.
 func TestSuccess(t *testing.T) {
@@ -32,7 +21,7 @@ func TestSuccess(t *testing.T) {
 	matcher := func(evt *mesh.Event) (bool, error) {
 		var payload int
 		err := evt.Payload(&payload)
-		verify.NoError(t,err)
+		verify.NoError(t, err)
 		return payload > 5, nil
 	}
 	processor := func(reader mesh.EventSinkReader) (any, error) {
@@ -41,7 +30,7 @@ func TestSuccess(t *testing.T) {
 		doer := func(i int, evt *mesh.Event) error {
 			var payload int
 			err := evt.Payload(&payload)
-			verify.NoError(t,err)
+			verify.NoError(t, err)
 			count += 1
 			sum += payload
 			return nil
@@ -71,7 +60,5 @@ func TestSuccess(t *testing.T) {
 			out.Emit(topic, payload)
 		}
 	}, 10*time.Second)
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 }
-
-// EOF

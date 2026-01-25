@@ -1,30 +1,15 @@
-// Tideland Go Cells - Behaviors - One-Timer
-//
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package onetimer // import "tideland.dev/go/cells/behaviors/onetimer"
-
-//--------------------
-// IMPORTS
-//--------------------
+package onetimer
 
 import (
 	"tideland.dev/go/cells/mesh"
 )
 
-//--------------------
-// HELPER
-//--------------------
-
 // OneTimerFunc describes the function called after the first event.
 type OneTimerFunc func(evt *mesh.Event, out mesh.Emitter) error
-
-//--------------------
-// BEHAVIOR
-//--------------------
 
 // Behavior implements a behavior calling the one-timer function the
 // first time it receives any event. This user-defined function can analyze
@@ -57,5 +42,3 @@ func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error 
 		}
 	}
 }
-
-// EOF

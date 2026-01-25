@@ -1,15 +1,8 @@
-// Tideland Go Cells - Behaviors - Broadcaster - Unit Test
-//
-// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package broadcaster_test // import "tideland.dev/go/cells/behaviors/broadcaster"
-
-//--------------------
-// IMPORTS
-//--------------------
+package broadcaster_test
 
 import (
 	"testing"
@@ -20,10 +13,6 @@ import (
 	"tideland.dev/go/cells/behaviors/broadcaster"
 	"tideland.dev/go/cells/mesh"
 )
-
-//--------------------
-// TESTS
-//--------------------
 
 // TestSuccess verifies the successfull broadcasting.
 func TestSuccess(t *testing.T) {
@@ -40,7 +29,5 @@ func TestSuccess(t *testing.T) {
 		out.Emit("two")
 		out.Emit("three")
 	}, time.Second)
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 }
-
-// EOF

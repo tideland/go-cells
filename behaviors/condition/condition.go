@@ -1,33 +1,18 @@
-// Tideland Go Cells - Behaviors - Condition
-//
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package condition // import "tideland.dev/go/cells/behaviors/condition"
-
-//--------------------
-// IMPORTS
-//--------------------
+package condition
 
 import (
 	"tideland.dev/go/cells/mesh"
 )
-
-//--------------------
-// HELPER
-//--------------------
 
 // ConditionTesterFunc checks if an event matches a wanted state.
 type ConditionTesterFunc func(evt *mesh.Event) bool
 
 // ConditionProcessorFunc handles the matching event.
 type ConditionProcessorFunc func(cell mesh.Cell, evt *mesh.Event, out mesh.Emitter) error
-
-//--------------------
-// BEHAVIOR
-//--------------------
 
 // Behavior checks if an incoming event fillfills a given condition. This
 // condition is defined by a given condition tester function. If that
@@ -61,5 +46,3 @@ func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error 
 		}
 	}
 }
-
-// EOF

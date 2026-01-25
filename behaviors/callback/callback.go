@@ -1,30 +1,15 @@
-// Tideland Go Cells - Behaviors - Callback
-//
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package callback // import "tideland.dev/go/cells/behaviors/callback"
-
-//--------------------
-// IMPORTS
-//--------------------
+package callback
 
 import (
 	"tideland.dev/go/cells/mesh"
 )
 
-//--------------------
-// HELPER
-//--------------------
-
 // CallbackFunc is a function called by the behavior when it receives an event.
 type CallbackFunc func(evt *mesh.Event, out mesh.Emitter) error
-
-//--------------------
-// BEHAVIOR
-//--------------------
 
 // Behavior implements a behavior calling a muber of functions for
 // each event.
@@ -56,5 +41,3 @@ func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error 
 		}
 	}
 }
-
-// EOF

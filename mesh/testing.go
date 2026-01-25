@@ -1,25 +1,14 @@
-// Tideland Go Cells - Mesh - Testing
-//
-// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package mesh // import "tideland.dev/go/cells/mesh"
-
-//--------------------
-// IMPORTS
-//--------------------
+package mesh
 
 import (
 	"context"
 
 	"tideland.dev/go/cells/mesh/internal"
 )
-
-//--------------------
-// TESTING EXPORTS
-//--------------------
 
 // TestCellI interface for testing.
 type TestCellI interface {
@@ -67,5 +56,3 @@ func newStream() interface {
 } {
 	return internal.NewTestStream()
 }
-
-// EOF

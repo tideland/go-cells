@@ -1,24 +1,13 @@
-// Tideland Go Cells - Mesh - Internal
-//
-// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package internal // import "tideland.dev/go/cells/mesh/internal"
-
-//--------------------
-// IMPORTS
-//--------------------
+package internal
 
 import (
 	"strings"
 	"sync"
 )
-
-//--------------------
-// EVENT SINK
-//--------------------
 
 // EventSink stores a number of ordered events by adding them at the end. To
 // be used in behaviors for collecting sets of events and operate on them.
@@ -162,5 +151,3 @@ func (s *eventSinkImpl) String() string {
 	})
 	return "[" + strings.Join(topics, " ") + "]"
 }
-
-// EOF

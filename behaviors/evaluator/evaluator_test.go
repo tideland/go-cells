@@ -1,31 +1,20 @@
-// Tideland Go Cells - Behaviors - Evaluator - Unit Tests
-//
-// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package evaluator_test // import "tideland.dev/go/cells/behaviors/evaluator"
-
-//--------------------
-// IMPORTS
-//--------------------
+package evaluator_test
 
 import (
 	"errors"
 	"testing"
 	"time"
 
+	"tideland.dev/go/asserts/generators"
 	"tideland.dev/go/asserts/verify"
-	"tideland.dev/go/audit/generators"
 
 	"tideland.dev/go/cells/behaviors/evaluator"
 	"tideland.dev/go/cells/mesh"
 )
-
-//--------------------
-// TESTS
-//--------------------
 
 // TestSuccess verifies the successful evaluation of events.
 func TestSuccess(t *testing.T) {
@@ -63,7 +52,7 @@ func TestSuccess(t *testing.T) {
 		out.Emit(evaluator.TopicEvaluate)
 		out.Emit(evaluator.TopicReset)
 	}, time.Second)
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 }
 
 // TestFail verifies the wanted failing of the evaluation.
@@ -92,7 +81,5 @@ func TestFail(t *testing.T) {
 	err := tb.Go(func(out mesh.Emitter) {
 		out.Emit("ouch")
 	}, time.Second)
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 }
-
-// EOF

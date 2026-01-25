@@ -1,15 +1,8 @@
-// Tideland Go Cells - Behaviors - Aggregator - Unit Test
-//
-// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package aggregator_test // import "tideland.dev/go/cells/behaviors/aggregator"
-
-//--------------------
-// IMPORTS
-//--------------------
+package aggregator_test
 
 import (
 	"strconv"
@@ -21,10 +14,6 @@ import (
 	"tideland.dev/go/cells/behaviors/aggregator"
 	"tideland.dev/go/cells/mesh"
 )
-
-//--------------------
-// TESTS
-//--------------------
 
 // TestAggregatorBehavior tests the aggregator behavior.
 func TestAggregatorBehavior(t *testing.T) {
@@ -67,7 +56,5 @@ func TestAggregatorBehavior(t *testing.T) {
 		out.Emit(aggregator.TopicAggregate)
 		out.Emit(aggregator.TopicReset)
 	}, time.Second)
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 }
-
-// EOF

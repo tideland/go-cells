@@ -1,25 +1,14 @@
-// Tideland Go Cells - Behaviors - Rate Window Evaluator
-//
-// Copyright (C) 2010-2022 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package ratewindow // import "tideland.dev/go/cells/behaviors/ratewindow"
-
-//--------------------
-// IMPORTS
-//--------------------
+package ratewindow
 
 import (
 	"time"
 
 	"tideland.dev/go/cells/mesh"
 )
-
-//--------------------
-// CONSTANTS
-//--------------------
 
 const (
 	// TopicReset tells the cell to reset its collected events.
@@ -29,17 +18,9 @@ const (
 	TopicRateWindow = "rate-window"
 )
 
-//--------------------
-// HELPER
-//--------------------
-
 // RateWindowCriterion is used by the rate window behavior and has to return
 // true, if the passed event matches a criterion for rate window measuring.
 type RateWindowCriterion func(evt *mesh.Event) (bool, error)
-
-//--------------------
-// RATE WINDOW BEHAVIOR
-//--------------------
 
 // Behavior implements the rate window behavior. It can be used to check,
 // if a number of wanted (matching) events happens in a defined timeframe.
@@ -110,5 +91,3 @@ func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error 
 	}
 	return nil
 }
-
-// EOF

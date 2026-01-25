@@ -1,31 +1,20 @@
-// Tideland Go Cells - Behaviors - Counter - Unit Tests
-//
-// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package counter_test // import "tideland.dev/go/cells/behaviors/counter"
-
-//--------------------
-// IMPORTS
-//--------------------
+package counter_test
 
 import (
 	"fmt"
 	"testing"
 	"time"
 
+	"tideland.dev/go/asserts/generators"
 	"tideland.dev/go/asserts/verify"
-	"tideland.dev/go/audit/generators"
 
 	"tideland.dev/go/cells/behaviors/counter"
 	"tideland.dev/go/cells/mesh"
 )
-
-//--------------------
-// TESTS
-//--------------------
 
 // TestSuccess tests the successful counting of events and resetting the counters.
 func TestSuccess(t *testing.T) {
@@ -75,7 +64,5 @@ func TestSuccess(t *testing.T) {
 		out.Emit(counter.TopicReset)
 		out.Emit(counter.TopicCounters)
 	}, time.Second)
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 }
-
-// EOF

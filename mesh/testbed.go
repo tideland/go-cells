@@ -1,15 +1,8 @@
-// Tideland Go Cells - Mesh
-//
-// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package mesh // import "tideland.dev/go/cells/mesh"
-
-//--------------------
-// IMPORTS
-//--------------------
+package mesh
 
 import (
 	"context"
@@ -19,10 +12,6 @@ import (
 
 	"tideland.dev/go/cells/mesh/internal"
 )
-
-//--------------------
-// TESTBED EVALUATOR
-//--------------------
 
 // TestbedEvaluator allows to store events received during evaluation.
 // Here it supports the interface EventSink.
@@ -84,10 +73,6 @@ func (tbe *TestbedEvaluator) String() string {
 	return "TestbedEvaluator{" + tbe.EventSink.String() + "}"
 }
 
-//--------------------
-// TESTBED FUNCTIONS
-//--------------------
-
 // TestbedRunner contains the operations running in the background
 // and emitting all events used by the tested behaviors as input.
 type TestbedRunner func(out Emitter)
@@ -95,10 +80,6 @@ type TestbedRunner func(out Emitter)
 // TestbedTest defines a function signature used for checking the final
 // success when the testbed runner has sent all test input events.
 type TestbedTester func(tbe *TestbedEvaluator)
-
-//--------------------
-// TESTBED
-//--------------------
 
 // Testbed provides a simple environment for the testing of individual behaviors.
 // So retrieving the Mesh by the Cell is possible, but using its methods leads to
@@ -179,5 +160,3 @@ func (tb *Testbed) wait(timeout time.Duration) error {
 		}
 	}
 }
-
-// EOF

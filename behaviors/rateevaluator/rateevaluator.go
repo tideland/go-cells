@@ -1,15 +1,8 @@
-// Tideland Go Cells - Behaviors - Rate Evaluator
-//
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package rateevaluator // import "tideland.dev/go/cells/behaviors/rateevaluator"
-
-//--------------------
-// IMPORTS
-//--------------------
+package rateevaluator
 
 import (
 	"time"
@@ -17,18 +10,10 @@ import (
 	"tideland.dev/go/cells/mesh"
 )
 
-//--------------------
-// CONSTANTS
-//--------------------
-
 const (
 	TopicRate  = "rate"
 	TopicReset = "reset!"
 )
-
-//--------------------
-// HELPER
-//--------------------
 
 // RaterFunc is used by the rate evaluator behavior and has to return true, if
 // the given event matches a criterion for rate measuring.
@@ -46,10 +31,6 @@ type Rate struct {
 	Low              time.Duration
 	Average          time.Duration
 }
-
-//--------------------
-// BEHAVIOR
-//--------------------
 
 // Behavior provides a behavior evaluating event rates. Each time a rater
 // func returns true for a received event the duration between this and the
@@ -128,5 +109,3 @@ func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error 
 		}
 	}
 }
-
-// EOF

@@ -1,31 +1,16 @@
-// Tideland Go Cells - Behaviors - Countdown
-//
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package countdown // import "tideland.dev/go/cells/behaviors/countdown"
-
-//--------------------
-// IMPORTS
-//--------------------
+package countdown
 
 import (
 	"tideland.dev/go/cells/mesh"
 )
 
-//--------------------
-// HELPER
-//--------------------
-
 // ZeroFunc is called when the countdown reaches zero. The collected
 // events are passed, the returned event will be emitted.
 type ZeroFunc func(r mesh.EventSinkReader) (*mesh.Event, error)
-
-//--------------------
-// BEHAVIOR
-//--------------------
 
 // Behavior collects a number of events. When this number is reached
 // a zero function with access to these events will be called. The event
@@ -66,5 +51,3 @@ func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error 
 		}
 	}
 }
-
-// EOF

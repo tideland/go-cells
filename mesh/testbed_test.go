@@ -1,15 +1,8 @@
-// Tideland Go Cells - Mesh - Tests
-//
-// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package mesh_test // import "tideland.dev/go/cells/mesh"
-
-//--------------------
-// IMPORTS
-//--------------------
+package mesh_test
 
 import (
 	"testing"
@@ -19,10 +12,6 @@ import (
 
 	"tideland.dev/go/cells/mesh"
 )
-
-//--------------------
-// TESTS
-//--------------------
 
 // TestTestbedSuccess verifies the successful working of the testbed
 // for behavior tests.
@@ -50,7 +39,7 @@ func TestTestbedSuccess(t *testing.T) {
 		out.Emit("two")
 		out.Emit("three")
 	}, time.Second)
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 }
 
 // TestTestbedFail verifies the failing working of the testbed
@@ -79,7 +68,7 @@ func TestTestbedFail(t *testing.T) {
 		out.Emit("two")
 		out.Emit("three")
 	}, time.Second)
-	verify.ErrorContains(t,err, "test failed: must fail")
+	verify.ErrorContains(t, err, "test failed: must fail")
 }
 
 // TestTestbedMesh verifies the Mesh stubbing of the testbed.
@@ -133,7 +122,5 @@ func TestTestbedMesh(t *testing.T) {
 		out.Emit("emit")
 		out.Emit("emitter")
 	}, time.Second)
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 }
-
-// EOF

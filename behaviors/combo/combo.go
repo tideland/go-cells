@@ -1,15 +1,8 @@
-// Tideland Go Cells - Behaviors - Combo
-//
-// Copyright (C) 2010-2021 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package combo // import "tideland.dev/go/cells/behaviors/combo"
-
-//--------------------
-// IMPORTS
-//--------------------
+package combo
 
 import (
 	"fmt"
@@ -17,19 +10,11 @@ import (
 	"tideland.dev/go/cells/mesh"
 )
 
-//--------------------
-// TOPICS
-//--------------------
-
 const (
 	TopicCriterionDone = "criterion-done"
 	TopicReset         = "reset!"
 	TopicResetDone     = "reset-done"
 )
-
-//--------------------
-// HELPER
-//--------------------
 
 // ComboCriterionFunc is used by the combo behavior. It has to return
 // CriterionDone when a combination is complete, CriterionKeep when it
@@ -52,10 +37,6 @@ const (
 	CriterionDropFirst
 	CriterionDropLast
 )
-
-//--------------------
-// BEHAVIOR
-//--------------------
 
 // Behavior checks the event stream for a combination of events defined by
 // a criterion function. In case of a match an according event is emitted.
@@ -108,5 +89,3 @@ func (b *Behavior) Go(cell mesh.Cell, in mesh.Receptor, out mesh.Emitter) error 
 		}
 	}
 }
-
-// EOF

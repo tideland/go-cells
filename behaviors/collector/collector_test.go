@@ -1,30 +1,19 @@
-// Tideland Go Cells - Behaviors - Collector - Unit Tests
-//
-// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package collector_test // import "tideland.dev/go/cells/behaviors/collector"
-
-//--------------------
-// IMPORTS
-//--------------------
+package collector_test
 
 import (
 	"testing"
 	"time"
 
+	"tideland.dev/go/asserts/generators"
 	"tideland.dev/go/asserts/verify"
-	"tideland.dev/go/audit/generators"
 
 	"tideland.dev/go/cells/behaviors/collector"
 	"tideland.dev/go/cells/mesh"
 )
-
-//--------------------
-// TESTS
-//--------------------
 
 // TestSuccess verifies the successful usage of the collection behavior.
 func TestSuccess(t *testing.T) {
@@ -58,7 +47,5 @@ func TestSuccess(t *testing.T) {
 		out.Emit(collector.TopicProcess)
 		out.Emit(collector.TopicReset)
 	}, time.Second)
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 }
-
-// EOF

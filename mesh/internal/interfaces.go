@@ -1,23 +1,12 @@
-// Tideland Go Cells - Mesh - Internal
-//
-// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package internal // import "tideland.dev/go/cells/mesh/internal"
-
-//--------------------
-// IMPORT
-//--------------------
+package internal
 
 import (
 	"context"
 )
-
-//--------------------
-// MESH
-//--------------------
 
 // Mesh describes the interface to a mesh of a cell from the
 // perspective of a behavior.
@@ -43,10 +32,6 @@ type Mesh interface {
 	Emitter(name string) (Emitter, error)
 }
 
-//--------------------
-// CELL
-//--------------------
-
 // Cell describes the interface to a cell from the perspective
 // of a behavior.
 type Cell interface {
@@ -61,19 +46,11 @@ type Cell interface {
 	Mesh() Mesh
 }
 
-//--------------------
-// BEHAVIOR
-//--------------------
-
 // Behavior describes what cell implementations must understand.
 type Behavior interface {
 	// Go will be started as wrapped goroutine.
 	Go(cell Cell, in Receptor, out Emitter) error
 }
-
-//--------------------
-// STREAM INTERFACES
-//--------------------
 
 // Receptor defines the interface to receive events.
 type Receptor interface {
@@ -90,10 +67,6 @@ type Emitter interface {
 	// EmitEvent appends the given event to the output stream.
 	EmitEvent(evt *Event) error
 }
-
-//--------------------
-// EVENT SINK INTERFACES
-//--------------------
 
 // EventSinkDoFunc is used when looking over the collected events.
 type EventSinkDoFunc func(i int, evt *Event) error
@@ -148,5 +121,3 @@ type EventSink interface {
 	EventSinkChanger
 	EventSinkReader
 }
-
-// EOF

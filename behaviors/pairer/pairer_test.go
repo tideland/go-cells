@@ -1,30 +1,19 @@
-// Tideland Go Cells - Behaviors - Pairer - Unit Tests
-//
-// Copyright (C) 2010-2026 Frank Mueller / Tideland / Oldenburg / Germany
-//
-// All rights reserved. Use of this source code is governed
-// by the new BSD license.
+// Copyright 2010-2026 Tideland / Frank Mueller. All rights reserved.
+// Use of this source code is governed by the BSD 3-Clause
+// license that can be found in the LICENSE file.
 
-package pairer_test // import "tideland.dev/go/cells/behaviors/pairer"
-
-//--------------------
-// IMPORTS
-//--------------------
+package pairer_test
 
 import (
 	"testing"
 	"time"
 
+	"tideland.dev/go/asserts/generators"
 	"tideland.dev/go/asserts/verify"
-	"tideland.dev/go/audit/generators"
 
 	"tideland.dev/go/cells/behaviors/pairer"
 	"tideland.dev/go/cells/mesh"
 )
-
-//--------------------
-// TESTS
-//--------------------
 
 // TestSuccess verifies the successful finding of at least two matching.
 func TestSuccess(t *testing.T) {
@@ -59,7 +48,7 @@ func TestSuccess(t *testing.T) {
 			out.Emit(topic)
 		}
 	}, 5*time.Second)
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 }
 
 // TestFailOneHit verifies the failing of finding a pair after already
@@ -91,7 +80,7 @@ func TestFailOneHit(t *testing.T) {
 			out.Emit(topic)
 		}
 	}, time.Second)
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 }
 
 // TestFailNoHit verifies the failing of finding any pair.
@@ -115,7 +104,5 @@ func TestFailNoHit(t *testing.T) {
 			out.Emit(topic)
 		}
 	}, time.Second)
-	verify.NoError(t,err)
+	verify.NoError(t, err)
 }
-
-// EOF
